@@ -49,6 +49,15 @@ class TestCanright(unittest.TestCase):
         self.assertEqual(self.z4, self.GF256(0x5D))
         self.assertEqual(self.w2, self.GF256(0xBC))
 
+    def test_levels_linkage(self):
+        nu = self.GF256(0xEC)
+        N = self.GF256(0xBC)
+        self.assertEqual(nu, N * N * self.z)
+        omega = self.GF256(0xBD)
+        self.assertEqual(N, omega * omega)
+        self.assertEqual(N * N, omega)
+
+
     def test_X2A(self):
         # The X2A transformation from b to g is defined as:
         # b = [b7, b6, b5, b4, b3, b2, b1, b0]
