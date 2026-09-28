@@ -1,9 +1,11 @@
 SIM ?= verilator
 TOPLEVEL_LANG ?= verilog
+RTL_SOURCES ?= ../src/rtl/MixColumn.sv
+TOPLEVEL ?= MixColumn
+COCOTB_TEST_MODULES ?= sim_mixcolumn
+SIM_BUILD ?= sim_build/$(TOPLEVEL)
 
-VERILOG_SOURCES += $(abspath ../src/rtl/MixColumn.sv)
-TOPLEVEL = MixColumn
-COCOTB_TEST_MODULES = sim_mixcolumn
+VERILOG_SOURCES += $(abspath $(RTL_SOURCES))
 EXTRA_ARGS += -Wno-UNOPTFLAT
 
 include $(shell cocotb-config --makefiles)/Makefile.sim

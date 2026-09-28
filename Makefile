@@ -1,7 +1,7 @@
 SIM ?= verilator
 TEST ?= mixcolumn
 
-.PHONY: help sim sim-% sim-all clean-sim
+.PHONY: help sim sim-mixcolumn sim-sbox sim-% sim-all clean-sim
 
 help:
 	@printf 'Targets:\n'
@@ -13,8 +13,14 @@ help:
 
 sim: sim-$(TEST)
 
+sim-mixcolumn:
+	$(MAKE) -C sim SIM=$(SIM) RTL_SOURCES=../src/rtl/MixColumn.sv TOPLEVEL=MixColumn COCOTB_TEST_MODULES=sim_mixcolumn
+
+sim-sbox:
+	$(MAKE) -C sim SIM=$(SIM) RTL_SOURCES=../src/rtl/Sbox.sv TOPLEVEL=Sbox COCOTB_TEST_MODULES=sim_sbox
+
 sim-%:
-	$(MAKE) -C sim SIM=$(SIM) COCOTB_TEST_MODULES=sim_$* TOPLEVEL=MixColumn
+	$(MAKE) -C sim SIM=$(SIM) RTL_SOURCES='$(RTL_SOURCES)' TOPLEVEL='$(TOPLEVEL)' COCOTB_TEST_MODULES=sim_$*
 
 sim-all:
 	@set -e; \
