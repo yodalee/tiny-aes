@@ -1,2 +1,4 @@
 .venv
 *.pyc
+/sim/sim_build
+/sim/results.xml
