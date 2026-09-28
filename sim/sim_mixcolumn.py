@@ -11,11 +11,17 @@ def pack_bytes(values):
     return value
 
 
+def as_int(value):
+    if hasattr(value, "to_unsigned"):
+        return value.to_unsigned()
+    return value.integer
+
+
 async def check_mixcolumn(dut, input_bytes, expected_bytes):
     expected = pack_bytes(expected_bytes)
     dut.i_data.value = pack_bytes(input_bytes)
-    await Timer(1, units="ns")
-    actual = dut.o_data.value.integer
+    await Timer(1, unit="ns")
+    actual = as_int(dut.o_data.value)
     assert actual == expected, (
         f"MixColumn({input_bytes!r}) returned 0x{actual:08x}, "
         f"expected 0x{expected:08x}"
