@@ -14,10 +14,10 @@ help:
 sim: sim-$(TEST)
 
 sim-mixcolumn:
-	$(MAKE) -C sim SIM=$(SIM) RTL_SOURCES=../src/rtl/MixColumn.sv TOPLEVEL=MixColumn COCOTB_TEST_MODULES=sim_mixcolumn
+	$(MAKE) -C sim SIM=$(SIM) RTL_SOURCES=../rtl/MixColumn.sv TOPLEVEL=MixColumn COCOTB_TEST_MODULES=sim_mixcolumn
 
 sim-sbox:
-	$(MAKE) -C sim SIM=$(SIM) RTL_SOURCES=../src/rtl/Sbox.sv TOPLEVEL=Sbox COCOTB_TEST_MODULES=sim_sbox
+	$(MAKE) -C sim SIM=$(SIM) RTL_SOURCES=../rtl/Sbox.sv TOPLEVEL=Sbox COCOTB_TEST_MODULES=sim_sbox
 
 sim-%:
 	$(MAKE) -C sim SIM=$(SIM) RTL_SOURCES='$(RTL_SOURCES)' TOPLEVEL='$(TOPLEVEL)' COCOTB_TEST_MODULES=sim_$*
