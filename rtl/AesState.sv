@@ -6,7 +6,7 @@ module AesState (
     input       c_mixcol,
     // input and output byte
     input  byte i_state,
-    output byte o_state,
+    output byte o_state
 );
 
 byte state00, state01, state02, state03;
@@ -107,7 +107,7 @@ MuxEnableFF i_state33 (
     .d0(i_state), .d1(state43), .q(state33)
 );
 
-assign i_col = {state00, state01, state02, state03};
+assign i_mixcol = {state00, state01, state02, state03};
 
 // feedback wire or mix column
 assign state40 = c_mixcol ? o_mixcol[24+:8] : state00;
