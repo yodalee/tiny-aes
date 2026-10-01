@@ -163,22 +163,22 @@ class TowerSbox:
     def g4_inverse(self, n:int) -> int:
         # since there are a lot of not operation
         # It will be more convenient to convert to Bool
-        d3 = ((n >> 3) & 0x1) == 1
-        d2 = ((n >> 2) & 0x1) == 1
-        d1 = ((n >> 1) & 0x1) == 1
-        d0 = ((n >> 0) & 0x1) == 1
-        nd3 = not d3
-        nd2 = not d2
-        nd1 = not d1
+        d0 = ((n >> 3) & 0x1) == 1
+        d1 = ((n >> 2) & 0x1) == 1
+        d2 = ((n >> 1) & 0x1) == 1
+        d3 = ((n >> 0) & 0x1) == 1
         nd0 = not d0
-        e3 = not ((d0 | nd1 | (d2 ^ d3)) and (nd0 | (not (d3 | nd1))))
-        e2 = not (nd1 | (not (d2 ^ d3))) and (nd0 | (not (nd2 | d1)))
+        nd1 = not d1
+        nd2 = not d2
+        nd3 = not d3
+        e0 = not ((nd3 | (not (d0 ^ d1))) and (nd2 | (not (nd0 | d3))))
         e1 = not ((d2 | nd3 | (d0 ^ d1)) and (nd2 | (not (d1 | nd3))))
-        e0 = not (nd3 | (not (d0 ^ d1))) and (nd2 | (not (nd0 | d3)))
-        return (1 << 3) if e3 else 0 | \
-               (1 << 2) if e2 else 0 | \
-               (1 << 1) if e1 else 0 | \
-               (1 << 0) if e0 else 0
+        e2 = not ((nd1 | (not (d2 ^ d3))) and (nd0 | (not (nd2 | d1))))
+        e3 = not ((d0 | nd1 | (d2 ^ d3)) and (nd0 | (not (d3 | nd1))))
+        return ((1 << 3) if e0 else 0) | \
+               ((1 << 2) if e1 else 0) | \
+               ((1 << 1) if e2 else 0) | \
+               ((1 << 0) if e3 else 0)
 
     def output_multiplier(self, a:int, b:int, e:int) -> int:
         # output w, z where w = mul(b, e), z = mul(a, e)
@@ -309,6 +309,14 @@ class TestSbox(unittest.TestCase):
         for value, golden in enumerate(ISBOX_GOLDEN):
             with self.subTest(value=f"0x{value:02x}"):
                 self.assertEqual(sbox.cal_isbox(value), golden)
+
+    def test_tower_inverse(self):
+        sbox = TowerSbox()
+        golden = [0x0, 0x4, 0xC, 0x8, 0x1, 0xA, 0xE, 0xD, 0x3, 0xB, 0x5, 0x9, 0x2, 0x7, 0x6, 0xF]
+        for x in range(16):
+            with self.subTest(value=f"0x{x:02x}"):
+                i = sbox.g4_inverse(x)
+                self.assertEqual(i, golden[x], f"{x}")
 
     @unittest.skip("TowerSbox not implemented yet")
     def test_tower_sbox(self):
