@@ -123,16 +123,137 @@ class TowerSbox:
             n >>= 1
         return ret
 
+    def expo17(self, a:int, b:int) -> int:
+        # d0 =(a01b01 ⊕ a02b02 ⊕ a0b0 ⊕ (a13 ∨ b13)),
+        # d1 =(a01b01 ⊕ (a02 ∨ b02) ⊕ a1b1 ⊕ apbp),
+        # d2 = ((a2 ∨ b2) ⊕ a13b13 ⊕ a23b23 ⊕ a02b02),
+        # d3 =(a3b3 ⊕ apbp ⊕ (a23 ∨ b23) ⊕ a02b02).
+        a3 = ((a >> 3) & 0x1) == 1
+        a2 = ((a >> 2) & 0x1) == 1
+        a1 = ((a >> 1) & 0x1) == 1
+        a0 = ((a >> 0) & 0x1) == 1
+        b3 = ((b >> 3) & 0x1) == 1
+        b2 = ((b >> 2) & 0x1) == 1
+        b1 = ((b >> 1) & 0x1) == 1
+        b0 = ((b >> 0) & 0x1) == 1
+        a01 = a0 ^ a1
+        a02 = a0 ^ a2
+        a13 = a1 ^ a3
+        a23 = a2 ^ a3
+        b01 = b0 ^ b1
+        b02 = b0 ^ b2
+        b13 = b1 ^ b3
+        b23 = b2 ^ b3
+        ap = a02 ^ a13
+        bp = b02 ^ b13
+        # d0 =(a01b01 ⊕ a02b02 ⊕ a0b0 ⊕ (a13 ∨ b13)),
+        # d1 =(a01b01 ⊕ (a02 ∨ b02) ⊕ a1b1 ⊕ apbp),
+        # d2 = ((a2 ∨ b2) ⊕ a13b13 ⊕ a23b23 ⊕ a02b02),
+        # d3 =(a3b3 ⊕ apbp ⊕ (a23 ∨ b23) ⊕ a02b02).
+        d0 = (a01 & b01) ^ (a02 & b02) ^ (a0 & b0) ^ (a13 | b13)
+        d1 = (a01 & b01) ^ (a02 | b02) ^ (a1 & b1) ^ (ap & bp)
+        d2 = (a2 | b2) ^ (a13 | b13) ^ (a23 & b23) ^ (a02 & b02)
+        d3 = (a3 & b3) ^ (ap & bp) ^ (a23 | b23) ^ (a02 & b02)
+        return (1 << 3) if d3 else 0 | \
+               (1 << 2) if d2 else 0 | \
+               (1 << 1) if d1 else 0 | \
+               (1 << 0) if d0 else 0
+
+
+    def g4_inverse(self, n:int) -> int:
+        # since there are a lot of not operation
+        # It will be more convenient to convert to Bool
+        d3 = ((n >> 3) & 0x1) == 1
+        d2 = ((n >> 2) & 0x1) == 1
+        d1 = ((n >> 1) & 0x1) == 1
+        d0 = ((n >> 0) & 0x1) == 1
+        nd3 = not d3
+        nd2 = not d2
+        nd1 = not d1
+        nd0 = not d0
+        e3 = not ((d0 | nd1 | (d2 ^ d3)) and (nd0 | (not (d3 | nd1))))
+        e2 = not (nd1 | (not (d2 ^ d3))) and (nd0 | (not (nd2 | d1)))
+        e1 = not ((d2 | nd3 | (d0 ^ d1)) and (nd2 | (not (d1 | nd3))))
+        e0 = not (nd3 | (not (d0 ^ d1))) and (nd2 | (not (nd0 | d3)))
+        return (1 << 3) if e3 else 0 | \
+               (1 << 2) if e2 else 0 | \
+               (1 << 1) if e1 else 0 | \
+               (1 << 0) if e0 else 0
+
+    def output_multiplier(self, a:int, b:int, e:int) -> int:
+        # output w, z where w = mul(b, e), z = mul(a, e)
+        # z0 = a1e0 ⊕ a01e1 ⊕ z4
+        # z1 = a0e1 ⊕ a01e0 ⊕ z5
+        # z2 = a3e2 ⊕ a23e3 ⊕ z4
+        # z3 = a2e3 ⊕ a23e2 ⊕ z5,
+        # z4 = a13e13 ⊕ a02e02
+        # z5 = ape13 ⊕ a13e02.
+        a3 = ((a >> 3) & 0x1) == 1
+        a2 = ((a >> 2) & 0x1) == 1
+        a1 = ((a >> 1) & 0x1) == 1
+        a0 = ((a >> 0) & 0x1) == 1
+        b3 = ((b >> 3) & 0x1) == 1
+        b2 = ((b >> 2) & 0x1) == 1
+        b1 = ((b >> 1) & 0x1) == 1
+        b0 = ((b >> 0) & 0x1) == 1
+        e3 = ((e >> 3) & 0x1) == 1
+        e2 = ((e >> 2) & 0x1) == 1
+        e1 = ((e >> 1) & 0x1) == 1
+        e0 = ((e >> 0) & 0x1) == 1
+        a01 = a0 ^ a1
+        a23 = a2 ^ a3
+        a13 = a1 ^ a3
+        a02 = a0 ^ a2
+        ap = a02 ^ a13
+        b01 = b0 ^ b1
+        b23 = b2 ^ b3
+        b13 = b1 ^ b3
+        b02 = b0 ^ b2
+        bp = b02 ^ b13
+        e02 = e0 ^ e2
+        e13 = e1 & e3
+        # z
+        z4 = (a13 & e13) ^ (a02 & e02)
+        z5 = (ap & e13) ^ (a13 & e02)
+        z0 = (a1 & e0) ^ (a01 & e1) ^ z4
+        z1 = (a0 & e1) ^ (a01 & e0) ^ z5
+        z2 = (a3 & e2) ^ (a23 & e3) ^ z4
+        z3 = (a2 & e3) ^ (a23 & e2) ^ z5
+        z = (1 << 3) if z3 else 0 | \
+            (1 << 2) if z2 else 0 | \
+            (1 << 1) if z1 else 0 | \
+            (1 << 0) if z0 else 0
+        # w
+        w4 = (b13 & e13) ^ (b02 & e02)
+        w5 = (bp & e13) ^ (b13 & e02)
+        w0 = (b1 & e0) ^ (b01 & e1) ^ w4
+        w1 = (b0 & e1) ^ (b01 & e0) ^ w5
+        w2 = (b3 & e2) ^ (b23 & e3) ^ w4
+        w3 = (b2 & e3) ^ (b23 & e2) ^ w5
+        w = (1 << 3) if w3 else 0 | \
+            (1 << 2) if w2 else 0 | \
+            (1 << 1) if w1 else 0 | \
+            (1 << 0) if w0 else 0
+        return w, z
+
+    def g256_inverse(self, x:int) -> int:
+        a = (x & 0xF0) >> 4
+        b = (x & 0xF)
+        d = self.expo17(a, b)
+        e = self.g4_inverse(d)
+        w, z = self.output_multiplier(a, b, e)
+        return (w << 4) | z
+
     def cal_sbox(self, n: int) -> int:
         nb = self.rebase(n, self.A2X)
-        ib = nb
+        ib = self.g256_inverse(nb)
         i = self.rebase(ib, self.X2S)
         return i
 
     def cal_isbox(self, n: int) -> int:
-        nb = self.rebase(n, self.A2X)
-        ib = nb
-        i = self.rebase(ib, self.X2S)
+        nb = self.rebase(n, self.S2X)
+        ib = self.g256_inverse(nb)
+        i = self.rebase(ib, self.X2A)
         return i
 
 # FIPS-197, Tables 4 and 6.  Keeping every entry here makes this test
