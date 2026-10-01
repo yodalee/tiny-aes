@@ -29,7 +29,7 @@ EnableFF    i_key02 ( .clk(clk), .rst_n(rst_n), .en(), .d(key03), .q(key02) );
 MuxEnableFF i_key03 (
     .clk(clk), .rst_n(rst_n),
     .en(), .sel(),
-    .d0(key10), .d1() .q(key03)
+    .d0(key10), .d1(), .q(key03)
 );
 
 // column 1
