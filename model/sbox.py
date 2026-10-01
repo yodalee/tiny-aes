@@ -128,14 +128,14 @@ class TowerSbox:
         # d1 =(a01b01 ⊕ (a02 ∨ b02) ⊕ a1b1 ⊕ apbp),
         # d2 = ((a2 ∨ b2) ⊕ a13b13 ⊕ a23b23 ⊕ a02b02),
         # d3 =(a3b3 ⊕ apbp ⊕ (a23 ∨ b23) ⊕ a02b02).
-        a3 = ((a >> 3) & 0x1) == 1
-        a2 = ((a >> 2) & 0x1) == 1
-        a1 = ((a >> 1) & 0x1) == 1
-        a0 = ((a >> 0) & 0x1) == 1
-        b3 = ((b >> 3) & 0x1) == 1
-        b2 = ((b >> 2) & 0x1) == 1
-        b1 = ((b >> 1) & 0x1) == 1
-        b0 = ((b >> 0) & 0x1) == 1
+        a0 = ((a >> 3) & 0x1) == 1
+        a1 = ((a >> 2) & 0x1) == 1
+        a2 = ((a >> 1) & 0x1) == 1
+        a3 = ((a >> 0) & 0x1) == 1
+        b0 = ((b >> 3) & 0x1) == 1
+        b1 = ((b >> 2) & 0x1) == 1
+        b2 = ((b >> 1) & 0x1) == 1
+        b3 = ((b >> 0) & 0x1) == 1
         a01 = a0 ^ a1
         a02 = a0 ^ a2
         a13 = a1 ^ a3
@@ -154,10 +154,10 @@ class TowerSbox:
         d1 = (a01 & b01) ^ (a02 | b02) ^ (a1 & b1) ^ (ap & bp)
         d2 = (a2 | b2) ^ (a13 | b13) ^ (a23 & b23) ^ (a02 & b02)
         d3 = (a3 & b3) ^ (ap & bp) ^ (a23 | b23) ^ (a02 & b02)
-        return (1 << 3) if d3 else 0 | \
-               (1 << 2) if d2 else 0 | \
-               (1 << 1) if d1 else 0 | \
-               (1 << 0) if d0 else 0
+        return ((1 << 3) if d0 else 0) | \
+               ((1 << 2) if d1 else 0) | \
+               ((1 << 1) if d2 else 0) | \
+               ((1 << 0) if d3 else 0)
 
 
     def g4_inverse(self, n:int) -> int:
@@ -188,18 +188,18 @@ class TowerSbox:
         # z3 = a2e3 ⊕ a23e2 ⊕ z5,
         # z4 = a13e13 ⊕ a02e02
         # z5 = ape13 ⊕ a13e02.
-        a3 = ((a >> 3) & 0x1) == 1
-        a2 = ((a >> 2) & 0x1) == 1
-        a1 = ((a >> 1) & 0x1) == 1
-        a0 = ((a >> 0) & 0x1) == 1
-        b3 = ((b >> 3) & 0x1) == 1
-        b2 = ((b >> 2) & 0x1) == 1
-        b1 = ((b >> 1) & 0x1) == 1
-        b0 = ((b >> 0) & 0x1) == 1
-        e3 = ((e >> 3) & 0x1) == 1
-        e2 = ((e >> 2) & 0x1) == 1
-        e1 = ((e >> 1) & 0x1) == 1
-        e0 = ((e >> 0) & 0x1) == 1
+        a0 = ((a >> 3) & 0x1) == 1
+        a1 = ((a >> 2) & 0x1) == 1
+        a2 = ((a >> 1) & 0x1) == 1
+        a3 = ((a >> 0) & 0x1) == 1
+        b0 = ((b >> 3) & 0x1) == 1
+        b1 = ((b >> 2) & 0x1) == 1
+        b2 = ((b >> 1) & 0x1) == 1
+        b3 = ((b >> 0) & 0x1) == 1
+        e0 = ((e >> 3) & 0x1) == 1
+        e1 = ((e >> 2) & 0x1) == 1
+        e2 = ((e >> 1) & 0x1) == 1
+        e3 = ((e >> 0) & 0x1) == 1
         a01 = a0 ^ a1
         a23 = a2 ^ a3
         a13 = a1 ^ a3
@@ -211,7 +211,7 @@ class TowerSbox:
         b02 = b0 ^ b2
         bp = b02 ^ b13
         e02 = e0 ^ e2
-        e13 = e1 & e3
+        e13 = e1 ^ e3
         # z
         z4 = (a13 & e13) ^ (a02 & e02)
         z5 = (ap & e13) ^ (a13 & e02)
@@ -219,10 +219,10 @@ class TowerSbox:
         z1 = (a0 & e1) ^ (a01 & e0) ^ z5
         z2 = (a3 & e2) ^ (a23 & e3) ^ z4
         z3 = (a2 & e3) ^ (a23 & e2) ^ z5
-        z = (1 << 3) if z3 else 0 | \
-            (1 << 2) if z2 else 0 | \
-            (1 << 1) if z1 else 0 | \
-            (1 << 0) if z0 else 0
+        z = ((1 << 3) if z0 else 0) | \
+            ((1 << 2) if z1 else 0) | \
+            ((1 << 1) if z2 else 0) | \
+            ((1 << 0) if z3 else 0)
         # w
         w4 = (b13 & e13) ^ (b02 & e02)
         w5 = (bp & e13) ^ (b13 & e02)
@@ -230,28 +230,29 @@ class TowerSbox:
         w1 = (b0 & e1) ^ (b01 & e0) ^ w5
         w2 = (b3 & e2) ^ (b23 & e3) ^ w4
         w3 = (b2 & e3) ^ (b23 & e2) ^ w5
-        w = (1 << 3) if w3 else 0 | \
-            (1 << 2) if w2 else 0 | \
-            (1 << 1) if w1 else 0 | \
-            (1 << 0) if w0 else 0
-        return w, z
+        w = ((1 << 3) if w0 else 0) | \
+            ((1 << 2) if w1 else 0) | \
+            ((1 << 1) if w2 else 0) | \
+            ((1 << 0) if w3 else 0)
+        return (w << 4) | z
 
     def g256_inverse(self, x:int) -> int:
         a = (x & 0xF0) >> 4
         b = (x & 0xF)
         d = self.expo17(a, b)
         e = self.g4_inverse(d)
-        w, z = self.output_multiplier(a, b, e)
-        return (w << 4) | z
+        o = self.output_multiplier(a, b, e)
+        return o
 
     def cal_sbox(self, n: int) -> int:
         nb = self.rebase(n, self.A2X)
         ib = self.g256_inverse(nb)
         i = self.rebase(ib, self.X2S)
-        return i
+        return i ^ 0x63
+
 
     def cal_isbox(self, n: int) -> int:
-        nb = self.rebase(n, self.S2X)
+        nb = self.rebase(n ^ 0x63, self.S2X)
         ib = self.g256_inverse(nb)
         i = self.rebase(ib, self.X2A)
         return i
@@ -318,7 +319,6 @@ class TestSbox(unittest.TestCase):
                 i = sbox.g4_inverse(x)
                 self.assertEqual(i, golden[x], f"{x}")
 
-    @unittest.skip("TowerSbox not implemented yet")
     def test_tower_sbox(self):
         sbox = TowerSbox()
         for value, golden in enumerate(SBOX_GOLDEN):
