@@ -29,6 +29,7 @@ module ControlFsm (
 	output logic       c_ke2,
 	output logic       c_kxor,
 	output logic       c_ikxor,
+	output logic       c_add,
     // Rc LUT
 	output logic [7:0] c_rc_idx
 );
@@ -47,6 +48,7 @@ always_comb begin
 	c_ke2 = 1'b0;
 	c_kxor = 1'b0;
 	c_ikxor = 1'b0;
+	c_add = 1'b0;
 	c_rc_idx = 8'b0;
 end
 

@@ -23,10 +23,14 @@ module AesCore (
 logic c_srow0, c_srow1, c_srow2;
 logic c_isrow0, c_isrow1, c_mixcol;
 logic c_ke0, c_ke1, c_ke2, c_kxor, c_ikxor;
+logic c_add, c_keyexp;
 logic [7:0] c_rc_idx, rc_data;
 byte state_data;
 byte key00, key20, key60, key70, key71;
 byte subkey_data;
+byte added_data;
+
+assign c_keyexp = c_ke0 | c_ke1 | c_ke2;
 
 ControlFsm i_control_fsm (
     .clk(clk),
@@ -49,7 +53,8 @@ ControlFsm i_control_fsm (
     .c_ke2(c_ke2),
     .c_kxor(c_kxor),
     .c_ikxor(c_ikxor),
-    .c_rc_idx(c_rc_idx)
+    .c_rc_idx(c_rc_idx),
+    .c_add(c_add)
 );
 
 AesState i_aes_state (
@@ -61,7 +66,7 @@ AesState i_aes_state (
     .c_isrow0(c_isrow0),
     .c_isrow1(c_isrow1),
     .c_mixcol(c_mixcol),
-    .i_state(i_data),
+    .i_state(c_add ? added_data : i_data),
     .o_state(state_data)
 );
 
@@ -90,10 +95,16 @@ RcLUT i_rc_lut (
     .o_data(rc_data)
 );
 
-Sbox i_sbox (
-    .c_inv(r_dec),
-    .i_data(c_ke2 ? key70 : key71),
-    .o_data(subkey_data)
+AddRoundKey i_add_round_key (
+    .clk(clk),
+    .rst_n(rst_n),
+    .r_dec(r_dec),
+    .c_add(c_add),
+    .c_keyexp(c_keyexp),
+    .i_key(c_ke2 ? key70 : key71),
+    .i_state(state_data),
+    .o_sbox(subkey_data),
+    .o_added(added_data)
 );
 
 assign o_data = state_data;
