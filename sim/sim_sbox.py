@@ -7,7 +7,7 @@ from cocotb.triggers import Timer
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT))
 
-from model.sbox import ISBOX_GOLDEN, SBOX_GOLDEN
+from model.sbox import SBOX_GOLDEN, ISBOX_GOLDEN
 
 
 def as_int(value):
