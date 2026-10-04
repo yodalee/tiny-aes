@@ -129,16 +129,23 @@ class ArishSbox:
         return self.g16_pow(a, 14)
 
     def g17(self, a: int, b: int) -> int:
+        NU = 0b0010
         # Calculate the g to the power of 17
-        # As g = AY + BY^16, g16 = BY + AY^16, so g17 = A x B + (A+B)^2
-        pass
+        # As g = AY + BY^16, g16 = BY + AY^16
+        # g17 = (AxB)(Y + Y^16) + (A^2 + B^2)Y^17
+        #   xince (Y + Y^16) = 1 and Y^17 = nu, so g17 = (AxB) + nu * (A+B)^2
+        c = self.g16_mul(a, b)
+        d = self.g16_square(a ^ b)
+        d = self.g16_mul(NU, d)
+        return c ^ d
 
     def g256_inverse(self, n: int) -> int:
         a = (n >> 4) & 0x0F
         b = n & 0xF
         d = self.g17(a, b)
-        p = a
-        q = b
+        e = self.g16_inv(d)
+        p = self.g16_mul(b, e)
+        q = self.g16_mul(a, e)
         return (p << 4) | q
 
     def cal_sbox(self, n: int) -> int:
@@ -153,7 +160,6 @@ class ArishSbox:
         i = self.rebase(ib, self.X2A)
         return i
 
-
 class TestSbox(unittest.TestCase):
     def setUp(self):
         self.sbox = ArishSbox()
@@ -165,14 +171,11 @@ class TestSbox(unittest.TestCase):
                 inv = self.sbox.g16_inv(x)
                 self.assertEqual(inv, golden[x], f"{x}")
 
-
-    @unittest.skip("Sbox is not implemented yet")
     def test_sbox_matches_golden_for_every_byte(self):
         for value, golden in enumerate(SBOX_GOLDEN):
             with self.subTest(value=f"0x{value:02x}"):
                 self.assertEqual(self.sbox.cal_sbox(value), golden)
 
-    @unittest.skip("Isbox is not implemented yet")
     def test_isbox_matches_golden_for_every_byte(self):
         for value, golden in enumerate(ISBOX_GOLDEN):
             with self.subTest(value=f"0x{value:02x}"):
