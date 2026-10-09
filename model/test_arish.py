@@ -148,17 +148,17 @@ class ArishSbox:
         q = self.g16_mul(a, e)
         return (p << 4) | q
 
-    def cal_sbox(self, n: int) -> int:
-        nb = self.rebase(n, self.A2X)
-        ib = self.g256_inverse(nb)
-        i = self.rebase(ib, self.X2S)
-        return i ^ 0x63
-
-    def cal_isbox(self, n: int) -> int:
-        nb = self.rebase(n ^ 0x63, self.S2X)
-        ib = self.g256_inverse(nb)
-        i = self.rebase(ib, self.X2A)
-        return i
+    def cal_sbox(self, n: int, forward: bool) -> int:
+        # f for forward and b for backward
+        n = n if forward else n ^ 0x63
+        nbf = self.rebase(n, self.A2X)
+        nbb = self.rebase(n, self.S2X)
+        nb = nbf if forward else nbb
+        inv = self.g256_inverse(nb)
+        of = self.rebase(inv, self.X2S)
+        ob = self.rebase(inv, self.X2A)
+        o = of ^ 0x63 if forward else ob
+        return o
 
 class TestSbox(unittest.TestCase):
     def setUp(self):
@@ -174,12 +174,12 @@ class TestSbox(unittest.TestCase):
     def test_sbox_matches_golden_for_every_byte(self):
         for value, golden in enumerate(SBOX_GOLDEN):
             with self.subTest(value=f"0x{value:02x}"):
-                self.assertEqual(self.sbox.cal_sbox(value), golden)
+                self.assertEqual(self.sbox.cal_sbox(value, True), golden)
 
     def test_isbox_matches_golden_for_every_byte(self):
         for value, golden in enumerate(ISBOX_GOLDEN):
             with self.subTest(value=f"0x{value:02x}"):
-                self.assertEqual(self.sbox.cal_isbox(value), golden)
+                self.assertEqual(self.sbox.cal_sbox(value, False), golden)
 
 
 if __name__ == "__main__":
