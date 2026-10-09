@@ -127,11 +127,22 @@ endfunction
 
 function automatic logic [3:0] g17(input logic [3:0] a, input logic [3:0] b);
     logic [3:0] c, d, sqr;
+    logic a32, b32, a31, b31, a10, b10, a20, b20, ap, bp;
 begin
-    c = g16_mul(a, b);
-    sqr = g16_mul(a ^ b, a ^ b);
-    d = g16_mul(NU, sqr);
-    g17 = c ^ d;
+    a32 = a[3] ^ a[2];
+    b32 = b[3] ^ b[2];
+    a31 = a[3] ^ a[1];
+    b31 = b[3] ^ b[1];
+    a10 = a[1] ^ a[0];
+    b10 = b[1] ^ b[0];
+    a20 = a[2] ^ a[0];
+    b20 = b[2] ^ b[0];
+    ap  = a31 ^ a20;
+    bp  = b31 ^ b20;
+    g17[3] = (a32 & b32) ^ (a31 & b31) ^ (a[3] & b[3]) ^ (a20 | b20);
+    g17[2] = (a32 & b32) ^ (a31 | b31) ^ (a[2] & b[2]) ^ (ap & bp);
+    g17[1] = (a[1] | b[1]) ^ (a20 & b20) ^ (a10 & b10) ^ (a31 & b31);
+    g17[0] = (a[0] & b[0]) ^ (ap & bp) ^ (a10 | b10) ^ (a31 & b31);;
 end
 endfunction
 
