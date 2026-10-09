@@ -1,5 +1,7 @@
 SIM ?= verilator
 TEST ?= mixcolumn
+SYN_TOP ?= AesTop
+SYN_OUT ?= build/syn
 
 .PHONY: help sim sim-mixcolumn sim-sbox sim-% sim-all clean-sim
 
@@ -9,7 +11,9 @@ help:
 	@printf '  make sim TEST=<name>  Run sim/sim_<name>.py\n'
 	@printf '  make sim-<name>       Run sim/sim_<name>.py\n'
 	@printf '  make sim-all          Run all sim/sim_*.py tests\n'
+	@printf '  make synth            Synthesize RTL with Yosys (SYN_TOP=AesTop)\n'
 	@printf '  make clean-sim        Remove simulation build outputs\n'
+	@printf '  make clean-synth      Remove synthesis build outputs\n'
 
 sim: sim-$(TEST)
 
@@ -32,3 +36,9 @@ sim-all:
 
 clean-sim:
 	$(MAKE) -C sim clean
+
+synth:
+	bash syn/synth.sh $(SYN_TOP) $(SYN_OUT)
+
+clean-synth:
+	rm -rf $(SYN_OUT)
