@@ -146,16 +146,59 @@ begin
 end
 endfunction
 
+function automatic logic [7:0] out_mul(
+    input logic [3:0] a,
+    input logic [3:0] b,
+    input logic [3:0] e);
+    logic [3:0] p, q;
+    logic a32, a10, a20, a31, ap;
+    logic b32, b10, b20, b31, bp;
+    logic e31, e20;
+    logic p4, p5, q4, q5;
+begin
+    // a-related
+    a32 = a[3] ^ a[2];
+    a31 = a[3] ^ a[1];
+    a20 = a[2] ^ a[0];
+    a10 = a[1] ^ a[0];
+    ap = a32 ^ a10;
+    // b-related
+    b32 = b[3] ^ b[2];
+    b31 = b[3] ^ b[1];
+    b20 = b[2] ^ b[0];
+    b10 = b[1] ^ b[0];
+    bp = b32 ^ b10;
+    // e-related
+    e31 = e[3] ^ e[1];
+    e20 = e[2] ^ e[0];
+    // calculate p
+    p4 = (b20 & e20) ^ (b31 & e31);
+    p5 = (bp & e20) ^ (b20 & e31);
+    p[3] = (b[2] & e[3]) ^ (b32 & e[2]) ^ p4;
+    p[2] = (b[3] & e[2]) ^ (b32 & e[3]) ^ p5;
+    p[1] = (b[0] & e[1]) ^ (b10 & e[0]) ^ p4;
+    p[0] = (b[1] & e[0]) ^ (b10 & e[1]) ^ p5;
+    // calculate q
+    q4 = (a20 & e20) ^ (a31 & e31);
+    q5 = (ap & e20) ^ (a20 & e31);
+    q[3] = (a[2] & e[3]) ^ (a32 & e[2]) ^ q4;
+    q[2] = (a[3] & e[2]) ^ (a32 & e[3]) ^ q5;
+    q[1] = (a[0] & e[1]) ^ (a10 & e[0]) ^ q4;
+    q[0] = (a[1] & e[0]) ^ (a10 & e[1]) ^ q5;
+    out_mul = {p, q};
+end
+endfunction
+
 function automatic logic [7:0] g256_inverse(input logic [7:0] n);
-    logic [3:0] a, b, d, e, p, q;
+    logic [3:0] a, b, d, e;
+    logic [7:0] pq;
 begin
     a = n[7:4];
     b = n[3:0];
     d = g17(a, b);
     e = g16_inv(d);
-    p = g16_mul(b, e);
-    q = g16_mul(a, e);
-    g256_inverse = {p, q};
+    pq = out_mul(a, b, e);
+    g256_inverse = pq;
 end
 endfunction
 
