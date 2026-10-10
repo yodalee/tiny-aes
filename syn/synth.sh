@@ -40,6 +40,8 @@ read_verilog -sv \\
   ${compat_rtl}/PosedgeDetector.sv \\
   ${compat_rtl}/RcLUT.sv \\
   ${compat_rtl}/Sbox.sv \\
+  ${compat_rtl}/SboxArish.sv \\
+  ${compat_rtl}/SboxCanright.sv \\
   ${compat_rtl}/MixColumn.sv \\
   ${compat_rtl}/AddRoundKey.sv \\
   ${compat_rtl}/KeyExpansion.sv \\
