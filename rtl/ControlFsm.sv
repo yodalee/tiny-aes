@@ -3,6 +3,11 @@
 //
 // The centralized control state machine.
 
+typedef enum logic [3:0] {
+    kLoad,   // Include substate of LoadData, LoadKey, LoadExtraKey
+    kOutput
+} State;
+
 module ControlFsm (
 	input  logic       clk,
 	input  logic       rst_n,
@@ -33,6 +38,76 @@ module ControlFsm (
     // Rc LUT
 	output logic [7:0] c_rc_idx
 );
+
+// The configuration related constant
+logic [5:0] load_end;
+always_comb begin
+case (r_level)
+    2'b00 : load_end = 6'd32; // 16 key + 16 data
+    2'b01 : load_end = 6'd40; // 24 key + 16 data
+    2'b10 : load_end = 6'd48; // 32 key + 16 data
+    2'b11 : load_end = 6'd32; // Use enc128 as default
+endcase
+end
+
+logic [3:0] round_end;
+always_comb begin
+case (r_level)
+    2'b00 : round_end = 4'd10;
+    2'b01 : round_end = 4'd12;
+    2'b10 : round_end = 4'd14;
+    2'b11 : round_end = 4'd10; // Use enc128 as default
+endcase
+end
+
+// The state_counter
+// Probably the most important variable in this module
+// All the control signal are hard-wire to assert in specific cycle according to state_counter
+// Also, the input/output states use the counter to count i_valid and o_ready.
+
+logic [5:0] state_counter;
+logic change_state;
+// Load counter and limit
+always_ff @( posedge clk or negedge rst_n ) begin
+if (!rst_n) begin
+    state_counter <= 'd0;
+end else begin
+    if (change_state) begin
+        state_counter <= 'd0;
+    end
+    if (state == kLoad && i_valid) begin
+        state_counter <= state_counter + 1;
+    end
+    else if (state == kOutput && o_ready) begin
+        state_counter <= state_counter + 1;
+    end
+    else begin
+        state_counter <= state_counter + 1;
+    end
+end
+end
+
+State state;
+
+always_ff @( posedge clk or negedge rst_n ) begin
+if (!rst_n) begin
+    state <= kLoad;
+end
+else begin
+    state <= state;
+end
+end
+
+logic [3:0] round;
+always_ff @( posedge clk or negedge rst_n ) begin
+if (!rst_n) begin
+    round <= 'b0;
+end else begin
+    if (change_state) begin
+        round <= round + 1;
+    end
+end
+end
 
 always_comb begin
 	i_ready = 1'b1;
