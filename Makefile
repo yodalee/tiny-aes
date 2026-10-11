@@ -3,7 +3,7 @@ TEST ?= mixcolumn
 SYN_TOP ?= AesTop
 SYN_OUT ?= build/syn
 
-.PHONY: help sim sim-mixcolumn sim-sbox sim-sbox-arish sim-sbox-canright sim-% sim-all synth synth-sbox-area clean-sim clean-synth
+.PHONY: help sim sim-mixcolumn sim-controlmixcolumn sim-sbox sim-sbox-arish sim-sbox-canright sim-% sim-all synth synth-sbox-area clean-sim clean-synth
 
 help:
 	@printf 'Targets:\n'
@@ -20,6 +20,9 @@ sim: sim-$(TEST)
 
 sim-mixcolumn:
 	$(MAKE) -C sim SIM=$(SIM) RTL_SOURCES=../rtl/MixColumn.sv TOPLEVEL=MixColumn COCOTB_TEST_MODULES=sim_mixcolumn
+
+sim-controlmixcolumn:
+	$(MAKE) -C sim SIM=$(SIM) RTL_SOURCES='../rtl/PosedgeDetector.sv ../rtl/ControlMixColumn.sv' TOPLEVEL=ControlMixColumn COCOTB_TEST_MODULES=sim_controlmixcolumn
 
 sim-sbox:
 	$(MAKE) -C sim SIM=$(SIM) RTL_SOURCES=../rtl/Sbox.sv TOPLEVEL=Sbox COCOTB_TEST_MODULES=sim_sbox
