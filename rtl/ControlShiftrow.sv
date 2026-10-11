@@ -51,12 +51,12 @@ always_ff @(posedge clk or negedge rst_n) begin
         end else if (active) begin
             unique case (step)
                 2'd1: begin
-                    c_srow2  <= !dec_q;
+                    c_srow1  <= !dec_q;
                     c_isrow0 <= dec_q;
                     step     <= 2'd2;
                 end
                 default: begin
-                    c_srow1  <= !dec_q;
+                    c_srow2  <= !dec_q;
                     c_isrow1 <= dec_q;
                     step     <= 2'd0;
                     active   <= 1'b0;
