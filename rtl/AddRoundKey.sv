@@ -4,6 +4,11 @@
 // Fully combinational module that connec the modules for
 // AddRoundKey and Sbox/ISbox operations, and expose the control signals
 
+// Control signal
+// 1. c_add:  True if we are doing the add_round_key
+//            This make the i_state xor with i_roundkey before or after sbox, depends on r_dec
+// 2. c_keyexpansion: True if we are doing the key expansion
+
 module AddRoundKey (
     input  logic       clk,
     input  logic       rst_n,
@@ -11,23 +16,24 @@ module AddRoundKey (
     input              r_dec,
     // control signals, prefix with c_, should be one-hot
     input              c_add,
-    input              c_keyexp,
+    input              c_keyexpansion,
     // input data
-    input  byte        i_key,
-    input  byte        i_state,
+    input  byte        i_roundkey, // key for add round_key
+    input  byte        i_state,    // state data for add round_key
+    input  byte        i_sboxkey,  // key go to sbox for key expansion
     // output data
     output byte        o_sbox,
-    output byte        o_added
+    output byte        o_state
 );
 
 // The state control
 byte add_before, add_after;
-assign add_before = (c_add && !r_dec) ? i_key : 8'b0;
-assign add_after =  (c_add && r_dec) ? i_key : 8'b0;
+assign add_before = (c_add && !r_dec) ? i_roundkey : 8'b0;
+assign add_after =  (c_add && r_dec) ? i_roundkey : 8'b0;
 
 // The key control
 byte sbox_in, sbox_out;
-assign sbox_in = (c_keyexp) ? i_key : i_state ^ add_before; 
+assign sbox_in = (c_keyexpansion) ? i_sboxkey : i_state ^ add_before;
 
 Sbox i_sbox (
     .c_inv(r_dec),
@@ -36,7 +42,7 @@ Sbox i_sbox (
 );
 
 assign o_sbox = sbox_out;
-assign o_added = sbox_out ^ add_after;
+assign o_state = sbox_out ^ add_after;
 
 
 endmodule
