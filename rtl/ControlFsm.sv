@@ -34,15 +34,29 @@ module ControlFsm (
 	output logic [7:0] c_rc_idx
 );
 
+ControlMixColumn i_control_mixcolumn (
+	.clk(clk),
+	.rst_n(rst_n),
+	.r_dec(r_dec),
+	.i_valid(i_valid),
+	.c_mixcol(c_mixcol)
+);
+
+ControlShiftrow i_control_shiftrow (
+	.clk(clk),
+	.rst_n(rst_n),
+	.r_dec(r_dec),
+	.i_valid(i_valid),
+	.c_srow0(c_srow0),
+	.c_srow1(c_srow1),
+	.c_srow2(c_srow2),
+	.c_isrow0(c_isrow0),
+	.c_isrow1(c_isrow1)
+);
+
 always_comb begin
 	i_ready = 1'b1;
 	o_valid = 1'b0;
-	c_srow0 = 1'b0;
-	c_srow1 = 1'b0;
-	c_srow2 = 1'b0;
-	c_isrow0 = 1'b0;
-	c_isrow1 = 1'b0;
-	c_mixcol = 1'b0;
 	c_ke0 = 1'b0;
 	c_ke1 = 1'b0;
 	c_ke2 = 1'b0;
