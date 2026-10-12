@@ -25,7 +25,8 @@ module AesCore (
     input        c_ikxor,
     /// control of sbox
     input        c_add,
-    input        c_keyexp,
+    input        c_sbox,
+    input        c_keyexpansion,
     /// rc_idx
     input byte   c_rc_idx,
     /// Data input
@@ -87,11 +88,13 @@ AddRoundKey i_add_round_key (
     .rst_n(rst_n),
     .r_dec(r_dec),
     .c_add(c_add),
-    .c_keyexp(c_keyexp),
-    .i_key(i_key),
+    .c_sbox(c_sbox),
+    .c_keyexpansion(c_keyexpansion),
+    .i_roundkey(i_key),
     .i_state(state_data),
-    .o_sbox(subkey_data),
-    .o_added(added_data)
+    .i_sboxkey(),
+    .o_key(subkey_data),
+    .o_state(added_data)
 );
 
 assign o_data = state_data;

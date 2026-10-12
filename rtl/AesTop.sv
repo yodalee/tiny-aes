@@ -22,11 +22,11 @@ module AesTop (
 logic c_srow0, c_srow1, c_srow2;
 logic c_isrow0, c_isrow1, c_mixcol;
 logic c_ke0, c_ke1, c_ke2, c_kxor, c_ikxor;
-logic c_add, c_keyexp;
+logic c_add, c_sbox, c_keyexpansion;
 logic [7:0] c_rc_idx;
 byte core_data;
 
-assign c_keyexp = c_ke0 | c_ke1 | c_ke2;
+assign c_keyexpansion = c_ke0 | c_ke1 | c_ke2;
 
 ControlFsm i_control_fsm (
     .clk(clk),
@@ -49,6 +49,7 @@ ControlFsm i_control_fsm (
     .c_kxor(c_kxor),
     .c_ikxor(c_ikxor),
     .c_add(c_add),
+    .c_sbox(c_sbox),
     .c_rc_idx(c_rc_idx)
 );
 
@@ -69,7 +70,8 @@ AesCore i_aes_core (
     .c_kxor(c_kxor),
     .c_ikxor(c_ikxor),
     .c_add(c_add),
-    .c_keyexp(c_keyexp),
+    .c_sbox(c_sbox),
+    .c_keyexpansion(c_keyexpansion),
     .c_rc_idx(c_rc_idx),
     .i_data(i_data),
     .o_data(o_data)

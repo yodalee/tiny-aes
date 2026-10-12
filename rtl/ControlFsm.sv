@@ -30,6 +30,7 @@ module ControlFsm (
 	output logic       c_ikxor,
     // Control signals of Sbox
 	output logic       c_add,
+    output logic       c_sbox,
     // Rc LUT
 	output logic [7:0] c_rc_idx
 );
