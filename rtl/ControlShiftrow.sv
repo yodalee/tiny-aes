@@ -7,6 +7,7 @@ module ControlShiftrow (
     input  logic rst_n,
     input  logic r_dec,
     input  logic i_valid,
+    output logic o_valid,
     output logic c_srow0,
     output logic c_srow1,
     output logic c_srow2,
@@ -31,6 +32,7 @@ always_ff @(posedge clk or negedge rst_n) begin
         dec_q    <= 1'b0;
         step     <= 2'd0;
         active   <= 1'b0;
+        o_valid  <= 1'b0;
         c_srow0  <= 1'b0;
         c_srow1  <= 1'b0;
         c_srow2  <= 1'b0;
@@ -42,6 +44,7 @@ always_ff @(posedge clk or negedge rst_n) begin
         c_srow2  <= 1'b0;
         c_isrow0 <= 1'b0;
         c_isrow1 <= 1'b0;
+        o_valid  <= 1'b0;
 
         if (i_valid_pulse) begin
             dec_q   <= r_dec;
@@ -58,6 +61,7 @@ always_ff @(posedge clk or negedge rst_n) begin
                 default: begin
                     c_srow2  <= !dec_q;
                     c_isrow1 <= dec_q;
+                    o_valid  <= 1'b1;
                     step     <= 2'd0;
                     active   <= 1'b0;
                 end
