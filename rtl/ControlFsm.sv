@@ -16,6 +16,7 @@ module ControlFsm (
 	input  logic       o_ready,
 	output logic       o_valid,
     // control signals of AesState
+	output logic       c_en,
 	output logic       c_srow0,
 	output logic       c_srow1,
 	output logic       c_srow2,

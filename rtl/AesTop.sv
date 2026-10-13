@@ -19,6 +19,7 @@ module AesTop (
     output byte  o_data
 );
 
+logic c_en;
 logic c_srow0, c_srow1, c_srow2;
 logic c_isrow0, c_isrow1, c_mixcol;
 logic c_ke0, c_ke1, c_ke2, c_kxor, c_ikxor;
@@ -37,6 +38,7 @@ ControlFsm i_control_fsm (
     .i_ready(i_ready),
     .o_ready(o_ready),
     .o_valid(o_valid),
+    .c_en(c_en),
     .c_srow0(c_srow0),
     .c_srow1(c_srow1),
     .c_srow2(c_srow2),
@@ -58,6 +60,7 @@ AesCore i_aes_core (
     .rst_n(rst_n),
     .r_dec(r_dec),
     .r_level(r_level),
+    .c_en(c_en),
     .c_srow0(c_srow0),
     .c_srow1(c_srow1),
     .c_srow2(c_srow2),

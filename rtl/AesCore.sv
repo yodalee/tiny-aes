@@ -11,6 +11,7 @@ module AesCore (
     input [1:0]  r_level,
     // Control signal from the controlfsm
     /// control of aes state
+    input        c_en,
     input        c_srow0,
     input        c_srow1,
     input        c_srow2,
@@ -46,6 +47,7 @@ assign i_state = c_add ? added_data : i_data;
 AesState i_aes_state (
     .clk(clk),
     .rst_n(rst_n),
+    .c_en(c_en),
     .c_srow0(c_srow0),
     .c_srow1(c_srow1),
     .c_srow2(c_srow2),
