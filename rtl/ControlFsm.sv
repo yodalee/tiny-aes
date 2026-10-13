@@ -16,6 +16,7 @@ module ControlFsm (
 	input  logic       o_ready,
 	output logic       o_valid,
     // control signals of AesState
+	output logic       c_stateen,
 	output logic       c_srow0,
 	output logic       c_srow1,
 	output logic       c_srow2,
@@ -23,6 +24,7 @@ module ControlFsm (
 	output logic       c_isrow1,
 	output logic       c_mixcol,
     // control signals of KeyExpansion
+	output logic       c_keyen,
 	output logic       c_ke0,
 	output logic       c_ke1,
 	output logic       c_ke2,
@@ -63,6 +65,8 @@ ControlShiftrow i_control_shiftrow (
 always_comb begin
 	i_ready = 1'b1;
 	o_valid = 1'b0;
+	c_stateen = 1'b0;
+	c_keyen = 1'b0;
 	c_ke0 = 1'b0;
 	c_ke1 = 1'b0;
 	c_ke2 = 1'b0;
