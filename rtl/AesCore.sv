@@ -11,6 +11,7 @@ module AesCore (
     input [1:0]  r_level,
     // Control signal from the controlfsm
     /// control of aes state
+    input        c_stateen,
     input        c_srow0,
     input        c_srow1,
     input        c_srow2,
@@ -18,6 +19,7 @@ module AesCore (
     input        c_isrow1,
     input        c_mixcol,
     /// control of key expansion
+    input        c_keyen,
     input        c_ke0,
     input        c_ke1,
     input        c_ke2,
@@ -46,6 +48,7 @@ assign i_state = c_add ? added_data : i_data;
 AesState i_aes_state (
     .clk(clk),
     .rst_n(rst_n),
+    .c_en(c_stateen),
     .c_srow0(c_srow0),
     .c_srow1(c_srow1),
     .c_srow2(c_srow2),
@@ -61,6 +64,7 @@ KeyExpansion i_key_expansion (
     .rst_n(rst_n),
     .r_dec(r_dec),
     .r_level(r_level),
+    .c_en(c_keyen),
     .c_ke0(c_ke0),
     .c_ke1(c_ke1),
     .c_ke2(c_ke2),

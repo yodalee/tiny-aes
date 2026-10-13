@@ -3,15 +3,16 @@
 //
 // Module to hold all the key state and do the Rijndael key schedule
 // There are 5 main operations:
-// 1. ke0: Key Expansion type 0: Sbox(key71) xor RC xor key00
+// 1. en:  Global enable signal to rotate the all key byte
+// 2. ke0: Key Expansion type 0: Sbox(key71) xor RC xor key00
 //         Example usage k16 <- k00 xor S(k13) xor RC
-// 2. ke1: Key Expansion type 1: Sbox(key71) xor key00
+// 3. ke1: Key Expansion type 1: Sbox(key71) xor key00
 //         Example usage k17 <- k01 xor S(k14)
-// 3. ke2: Key Expansion type 2: Sbox(key70) xor key00
+// 4. ke2: Key Expansion type 2: Sbox(key70) xor key00
 //         Example usage k48 <- k16 xor S(k44), Only used in AES256.c_ke0
 //         Note that first row will be k16, k20, k24, k28, k32, k36, k40, k44
-// 4. kxor:
-// 5. ikxor
+// 5. kxor:
+// 6. ikxor
 //         general use, (16-4), (24-4), (32-8) kxor operation in AES128, 192, 256
 //         Example usage k20 <- k4 xor k16
 
@@ -25,6 +26,8 @@ module KeyExpansion (
     input       r_dec,
     input [1:0] r_level,
     // control signal, prefix with c_, should be one-hot
+    input       c_en,
+    // The control signal below should be one-hot
     input       c_ke0,
     input       c_ke1,
     input       c_ke2,
@@ -45,7 +48,7 @@ module KeyExpansion (
 // wire derived from c_ signal
 // en: the key expansion pipeline is active
 logic en;
-assign en = c_ke0 | c_ke1 | c_ke2 | c_kxor | c_ikxor;
+assign en = c_en | c_ke0 | c_ke1 | c_ke2 | c_kxor | c_ikxor;
 // True if we need to XOR the RC, only ke0 operation need it
 logic mux_RC;
 assign mux_RC = c_ke0;
