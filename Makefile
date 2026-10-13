@@ -2,13 +2,30 @@ SIM ?= verilator
 TEST ?= mixcolumn
 SYN_TOP ?= AesTop
 SYN_OUT ?= build/syn
+AESTOP_RTL_SOURCES := \
+	../rtl/Aes_pkg.sv \
+	../rtl/EnableFF.sv \
+	../rtl/MuxEnableFF.sv \
+	../rtl/PosedgeDetector.sv \
+	../rtl/SboxLut.sv \
+	../rtl/MixColumn.sv \
+	../rtl/AesState.sv \
+	../rtl/KeyExpansion.sv \
+	../rtl/RcLUT.sv \
+	../rtl/AddRoundKey.sv \
+	../rtl/AesCore.sv \
+	../rtl/ControlFsm.sv \
+	../rtl/ControlMixColumn.sv \
+	../rtl/ControlShiftrow.sv \
+	../rtl/AesTop.sv
 
-.PHONY: help sim sim-mixcolumn sim-controlmixcolumn sim-controlshiftrow sim-sbox sim-sbox-arish sim-sbox-canright sim-% sim-all synth synth-sbox-area clean-sim clean-synth
+.PHONY: help sim sim-aestop sim-mixcolumn sim-controlmixcolumn sim-controlshiftrow sim-sbox sim-sbox-arish sim-sbox-canright sim-% sim-all synth synth-sbox-area clean-sim clean-synth
 
 help:
 	@printf 'Targets:\n'
 	@printf '  make sim              Run the default simulation (mixcolumn)\n'
 	@printf '  make sim TEST=<name>  Run sim/sim_<name>.py\n'
+	@printf '  make sim-aestop       Run skipped AesTop AES tests and write sim/dump.fst\n'
 	@printf '  make sim-<name>       Run sim/sim_<name>.py\n'
 	@printf '  make sim-all          Run all sim/sim_*.py tests\n'
 	@printf '  make synth            Synthesize RTL with Yosys (SYN_TOP=AesTop)\n'
@@ -38,6 +55,9 @@ sim-sboxcanright:
 
 sim-%:
 	$(MAKE) -C sim SIM=$(SIM) RTL_SOURCES='$(RTL_SOURCES)' TOPLEVEL='$(TOPLEVEL)' COCOTB_TEST_MODULES=sim_$*
+
+sim-aestop:
+	$(MAKE) -C sim SIM=$(SIM) RTL_SOURCES='$(AESTOP_RTL_SOURCES)' TOPLEVEL=AesTop COCOTB_TEST_MODULES=sim_aestop AESTOP_TRACE=1
 
 sim-all:
 	@set -e; \

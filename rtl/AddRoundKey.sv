@@ -37,7 +37,7 @@ assign add_after =  (c_add && r_dec) ? i_roundkey : 8'b0;
 byte sbox_in, sbox_out;
 assign sbox_in = (c_keyexpansion) ? i_sboxkey : i_state ^ add_before;
 
-Sbox i_sbox (
+SboxLut i_sbox (
     .c_inv(r_dec),
     .i_data(sbox_in),
     .o_data(sbox_out)
