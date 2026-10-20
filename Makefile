@@ -27,8 +27,8 @@ sim-controlmixcolumn:
 sim-controlshiftrow:
 	$(MAKE) -C sim SIM=$(SIM) RTL_SOURCES='../rtl/PosedgeDetector.sv ../rtl/ControlShiftrow.sv' TOPLEVEL=ControlShiftrow COCOTB_TEST_MODULES=sim_controlshiftrow
 
-sim-sbox:
-	$(MAKE) -C sim SIM=$(SIM) RTL_SOURCES=../rtl/Sbox.sv TOPLEVEL=Sbox COCOTB_TEST_MODULES=sim_sbox
+sim-sboxlut:
+	$(MAKE) -C sim SIM=$(SIM) RTL_SOURCES=../rtl/SboxLut.sv TOPLEVEL=SboxLut COCOTB_TEST_MODULES=sim_sbox
 
 sim-sboxarish:
 	$(MAKE) -C sim SIM=$(SIM) RTL_SOURCES=../rtl/SboxArish.sv TOPLEVEL=SboxArish COCOTB_TEST_MODULES=sim_sboxarish

@@ -1,7 +1,7 @@
-// Sbox
+// SboxLut
 // Fully combinational AES S-box / inverse S-box lookup table.
 
-module Sbox (
+module SboxLut (
     input  logic       c_inv,
     input  logic [7:0] i_data,
     output logic [7:0] o_data
