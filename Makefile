@@ -25,8 +25,8 @@ help:
 	@printf 'Targets:\n'
 	@printf '  make sim              Run the default simulation (mixcolumn)\n'
 	@printf '  make sim TEST=<name>  Run sim/sim_<name>.py\n'
-	@printf '  make sim-aestop       Run skipped AesTop AES tests and write sim/dump.fst\n'
 	@printf '  make sim-<name>       Run sim/sim_<name>.py\n'
+	@printf '  make sim-<name> DUMP=1  Write an FST trace for any simulation\n'
 	@printf '  make sim-all          Run all sim/sim_*.py tests\n'
 	@printf '  make synth            Synthesize RTL with Yosys (SYN_TOP=AesTop)\n'
 	@printf '  make synth-sbox-area  Compare Canright and Arish S-box area\n'
@@ -57,7 +57,7 @@ sim-%:
 	$(MAKE) -C sim SIM=$(SIM) RTL_SOURCES='$(RTL_SOURCES)' TOPLEVEL='$(TOPLEVEL)' COCOTB_TEST_MODULES=sim_$*
 
 sim-aestop:
-	$(MAKE) -C sim SIM=$(SIM) RTL_SOURCES='$(AESTOP_RTL_SOURCES)' TOPLEVEL=AesTop COCOTB_TEST_MODULES=sim_aestop AESTOP_TRACE=1
+	$(MAKE) -C sim SIM=$(SIM) RTL_SOURCES='$(AESTOP_RTL_SOURCES)' TOPLEVEL=AesTop COCOTB_TEST_MODULES=sim_aestop
 
 sim-all:
 	@set -e; \

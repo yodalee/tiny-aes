@@ -1,5 +1,6 @@
 .venv
 *.pyc
+*.fst
 /sim/sim_build
 /sim/results.xml
 /build/
