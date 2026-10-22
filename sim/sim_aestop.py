@@ -13,16 +13,16 @@ from cocotb.triggers import RisingEdge
 DATA = bytes(range(16))
 KEY_LEVEL = {16: 0b00, 24: 0b01, 32: 0b10}
 
-# AES ECB results for DATA=000102030405060708090a0b0c0d0e0f and the
+# AES ECB results for DATA=00112233445566778899aabbccddeeff and the
 # incrementing key of the corresponding length.  Decryption deliberately uses
 # the same input block, so its expected values are the inverse transformations.
 EXPECTED = {
-    (False, 16): bytes.fromhex("0a940bb5416ef045f1c39458c653ea5a"),
-    (False, 24): bytes.fromhex("0060bffe46834bb8da5cf9a61ff220ae"),
-    (False, 32): bytes.fromhex("5a6e045708fb7196f02e553d02c3a692"),
-    (True, 16): bytes.fromhex("7757e366e9636e669a162d35f52dbe19"),
-    (True, 24): bytes.fromhex("dc0c9420c5034bd4bea480d91a29c99d"),
-    (True, 32): bytes.fromhex("913dbce5493afdc05772858aad4a4432"),
+    (False, 16): bytes.fromhex("69c4e0d86a7b0430d8cdb78070b4c55a"),
+    (False, 24): bytes.fromhex("dda97ca4864cdfe06eaf70a0ec0d7191"),
+    (False, 32): bytes.fromhex("8ea2b7ca516745bfeafc49904b496089"),
+    (True, 16): bytes.fromhex("762a5ab50929189cefdb99434790aad8"),
+    (True, 24): bytes.fromhex("3369eb82973635e9c2e96d687724c790"),
+    (True, 32): bytes.fromhex("eab487e68ec92db4ac288a24757b0262"),
 }
 
 
