@@ -1,0 +1,194 @@
+"""Round-by-round AES-128/192/256 tracing backed by the PyPI ``aes`` package.
+
+This is deliberately a tracing adapter, not another AES implementation.  The
+AES transformations and key expansion come from ``aes==1.2.0``; this module
+records their inputs and outputs in the order specified by FIPS 197.
+
+Example:
+    python3 model/aes.py encrypt \
+        --input 00112233445566778899aabbccddeeff \
+        --key 000102030405060708090a0b0c0d0e0f
+
+The printed states are 16-byte values in AES column-major order.  ``--json``
+produces a machine-readable record with every operation and round key.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+from pathlib import Path
+from typing import Any, Callable, Sequence
+
+# This file intentionally has the same name as the dependency.  When invoked
+# as ``python model/aes.py``, remove its directory from import resolution so
+# ``aes`` below is the installed package, not this script a second time.
+if __name__ == "__main__" and sys.path and Path(sys.path[0]).resolve() == Path(__file__).parent.resolve():
+    sys.path.pop(0)
+
+from aes.core import (
+    addroundkey,
+    decryption,
+    encryption,
+    inv_mixcolumns,
+    inv_shiftrows,
+    inv_subbytes,
+    key_expansion,
+    mixcolumns,
+    shiftrows,
+    subbytes,
+)
+
+
+State = list[int]
+Trace = dict[str, Any]
+
+
+def _as_bytes(value: bytes | bytearray | str, name: str, sizes: set[int]) -> State:
+    """Return a hex string or byte sequence as a validated list of bytes."""
+    if isinstance(value, str):
+        try:
+            value = bytes.fromhex(value)
+        except ValueError as error:
+            raise ValueError(f"{name} must be an even-length hexadecimal string") from error
+    if not isinstance(value, (bytes, bytearray)):
+        raise TypeError(f"{name} must be bytes, bytearray, or a hexadecimal string")
+    if len(value) not in sizes:
+        expected = ", ".join(str(size) for size in sorted(sizes))
+        raise ValueError(f"{name} must be {expected} bytes, got {len(value)}")
+    return list(value)
+
+
+def _round_keys(key: State) -> list[State]:
+    expanded = key_expansion(key)
+    return [expanded[offset : offset + 16] for offset in range(0, len(expanded), 16)]
+
+
+def _record(round_trace: Trace, operation: str, state: State) -> State:
+    """Record an operation result and return a separate state copy."""
+    snapshot = state.copy()
+    round_trace["states"][operation] = snapshot
+    return snapshot
+
+
+def trace_encrypt(plaintext: bytes | bytearray | str, key: bytes | bytearray | str) -> Trace:
+    """Trace AES encryption of one block, including all round transformations.
+
+    The returned ``rounds`` entries contain the round key and every resulting
+    state.  The final round correctly has no ``MixColumns`` state.
+    """
+    pt = _as_bytes(plaintext, "plaintext", {16})
+    master_key = _as_bytes(key, "key", {16, 24, 32})
+    round_keys = _round_keys(master_key)
+    rounds: list[Trace] = []
+
+    initial = {"round": 0, "round_key": round_keys[0], "states": {"input": pt.copy()}}
+    state = _record(initial, "AddRoundKey", addroundkey(pt, round_keys[0]))
+    rounds.append(initial)
+
+    for number in range(1, len(round_keys)):
+        round_trace = {"round": number, "round_key": round_keys[number], "states": {}}
+        state = _record(round_trace, "SubBytes", subbytes(state))
+        state = _record(round_trace, "ShiftRows", shiftrows(state))
+        if number != len(round_keys) - 1:
+            state = _record(round_trace, "MixColumns", mixcolumns(state))
+        state = _record(round_trace, "AddRoundKey", addroundkey(state, round_keys[number]))
+        rounds.append(round_trace)
+
+    # Cross-check the package's normal entry point so a trace cannot silently
+    # diverge when its primitives change.
+    assert state == encryption(pt, key_expansion(master_key))
+    return {
+        "direction": "encrypt",
+        "key_size": len(master_key) * 8,
+        "input": pt,
+        "round_keys": round_keys,
+        "rounds": rounds,
+        "output": state,
+    }
+
+
+def trace_decrypt(ciphertext: bytes | bytearray | str, key: bytes | bytearray | str) -> Trace:
+    """Trace AES decryption of one block, including inverse transformations."""
+    ct = _as_bytes(ciphertext, "ciphertext", {16})
+    master_key = _as_bytes(key, "key", {16, 24, 32})
+    round_keys = _round_keys(master_key)
+    last_round = len(round_keys) - 1
+    rounds: list[Trace] = []
+
+    first = {"round": last_round, "round_key": round_keys[last_round], "states": {"input": ct.copy()}}
+    state = _record(first, "AddRoundKey", addroundkey(ct, round_keys[last_round]))
+    state = _record(first, "InvShiftRows", inv_shiftrows(state))
+    state = _record(first, "InvSubBytes", inv_subbytes(state))
+    rounds.append(first)
+
+    for number in range(last_round - 1, 0, -1):
+        round_trace = {"round": number, "round_key": round_keys[number], "states": {}}
+        state = _record(round_trace, "AddRoundKey", addroundkey(state, round_keys[number]))
+        state = _record(round_trace, "InvMixColumns", inv_mixcolumns(state))
+        state = _record(round_trace, "InvShiftRows", inv_shiftrows(state))
+        state = _record(round_trace, "InvSubBytes", inv_subbytes(state))
+        rounds.append(round_trace)
+
+    final = {"round": 0, "round_key": round_keys[0], "states": {}}
+    state = _record(final, "AddRoundKey", addroundkey(state, round_keys[0]))
+    rounds.append(final)
+
+    assert state == decryption(ct, key_expansion(master_key))
+    return {
+        "direction": "decrypt",
+        "key_size": len(master_key) * 8,
+        "input": ct,
+        "round_keys": round_keys,
+        "rounds": rounds,
+        "output": state,
+    }
+
+
+def _hex(state: Sequence[int]) -> str:
+    return bytes(state).hex()
+
+
+def trace_as_hex(trace: Trace) -> Trace:
+    """Return a JSON-ready copy of a trace with all byte states hex encoded."""
+    result = {key: value for key, value in trace.items() if key not in {"input", "output", "round_keys", "rounds"}}
+    result["input"] = _hex(trace["input"])
+    result["output"] = _hex(trace["output"])
+    result["round_keys"] = [_hex(round_key) for round_key in trace["round_keys"]]
+    result["rounds"] = [
+        {
+            "round": round_trace["round"],
+            "round_key": _hex(round_trace["round_key"]),
+            "states": {operation: _hex(state) for operation, state in round_trace["states"].items()},
+        }
+        for round_trace in trace["rounds"]
+    ]
+    return result
+
+
+def dump(trace: Trace) -> str:
+    """Format a complete human-readable AES trace."""
+    lines = [f"AES-{trace['key_size']} {trace['direction']}", f"input        {_hex(trace['input'])}"]
+    for round_trace in trace["rounds"]:
+        lines.append(f"round {round_trace['round']:2d} key  {_hex(round_trace['round_key'])}")
+        lines.extend(f"  {operation:<14} {_hex(state)}" for operation, state in round_trace["states"].items())
+    lines.append(f"output       {_hex(trace['output'])}")
+    return "\n".join(lines)
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Dump all internal AES block-cipher states.")
+    parser.add_argument("direction", choices=("encrypt", "decrypt"))
+    parser.add_argument("--input", required=True, help="16-byte block as hexadecimal")
+    parser.add_argument("--key", required=True, help="16-, 24-, or 32-byte key as hexadecimal")
+    parser.add_argument("--json", action="store_true", help="write a JSON trace instead of text")
+    args = parser.parse_args()
+
+    tracer: Callable[[str, str], Trace] = trace_encrypt if args.direction == "encrypt" else trace_decrypt
+    trace = tracer(args.input, args.key)
+    print(json.dumps(trace_as_hex(trace), indent=2) if args.json else dump(trace))
+
+
+if __name__ == "__main__":
+    main()
