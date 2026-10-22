@@ -9,6 +9,8 @@ Example:
         --input 00112233445566778899aabbccddeeff \
         --key 000102030405060708090a0b0c0d0e0f
 
+    python3 model/aes.py defaults
+
 The printed states are 16-byte values in AES column-major order.  ``--json``
 produces a machine-readable record with every operation and round key.
 """
@@ -18,6 +20,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import unittest
 from pathlib import Path
 from typing import Any, Callable, Sequence
 
@@ -43,6 +46,57 @@ from aes.core import (
 
 State = list[int]
 Trace = dict[str, Any]
+
+
+# Six standalone default cases.  Encryption and decryption each receive the
+# same original data block; the decrypt cases deliberately do *not* consume
+# the corresponding encryption output.  They are kept here so
+# ``python3 -m unittest model.aes`` is immediately useful when comparing RTL
+# state dumps against the software reference.
+DEFAULT_CASES = (
+    {
+        "name": "AES-128 encrypt",
+        "direction": "encrypt",
+        "key": "000102030405060708090a0b0c0d0e0f",
+        "input": "00112233445566778899aabbccddeeff",
+        "output": "69c4e0d86a7b0430d8cdb78070b4c55a",
+    },
+    {
+        "name": "AES-128 decrypt",
+        "direction": "decrypt",
+        "key": "000102030405060708090a0b0c0d0e0f",
+        "input": "00112233445566778899aabbccddeeff",
+        "output": "762a5ab50929189cefdb99434790aad8",
+    },
+    {
+        "name": "AES-192 encrypt",
+        "direction": "encrypt",
+        "key": "000102030405060708090a0b0c0d0e0f1011121314151617",
+        "input": "00112233445566778899aabbccddeeff",
+        "output": "dda97ca4864cdfe06eaf70a0ec0d7191",
+    },
+    {
+        "name": "AES-192 decrypt",
+        "direction": "decrypt",
+        "key": "000102030405060708090a0b0c0d0e0f1011121314151617",
+        "input": "00112233445566778899aabbccddeeff",
+        "output": "3369eb82973635e9c2e96d687724c790",
+    },
+    {
+        "name": "AES-256 encrypt",
+        "direction": "encrypt",
+        "key": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+        "input": "00112233445566778899aabbccddeeff",
+        "output": "8ea2b7ca516745bfeafc49904b496089",
+    },
+    {
+        "name": "AES-256 decrypt",
+        "direction": "decrypt",
+        "key": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+        "input": "00112233445566778899aabbccddeeff",
+        "output": "eab487e68ec92db4ac288a24757b0262",
+    },
+)
 
 
 def _as_bytes(value: bytes | bytearray | str, name: str, sizes: set[int]) -> State:
@@ -177,14 +231,59 @@ def dump(trace: Trace) -> str:
     return "\n".join(lines)
 
 
+class TestAesTrace(unittest.TestCase):
+    """Six default AES known-answer tests: three key sizes in two directions."""
+
+    def _assert_case(self, case: dict[str, str]) -> None:
+        tracer = trace_encrypt if case["direction"] == "encrypt" else trace_decrypt
+        trace = tracer(case["input"], case["key"])
+        self.assertEqual(_hex(trace["output"]), case["output"])
+        self.assertEqual(len(trace["round_keys"]), {128: 11, 192: 13, 256: 15}[trace["key_size"]])
+        if case["direction"] == "encrypt":
+            self.assertNotIn("MixColumns", trace["rounds"][-1]["states"])
+        else:
+            self.assertNotIn("InvMixColumns", trace["rounds"][0]["states"])
+
+    def test_aes128_encrypt(self) -> None:
+        self._assert_case(DEFAULT_CASES[0])
+
+    def test_aes192_encrypt(self) -> None:
+        self._assert_case(DEFAULT_CASES[2])
+
+    def test_aes256_encrypt(self) -> None:
+        self._assert_case(DEFAULT_CASES[4])
+
+    def test_aes128_decrypt(self) -> None:
+        self._assert_case(DEFAULT_CASES[1])
+
+    def test_aes192_decrypt(self) -> None:
+        self._assert_case(DEFAULT_CASES[3])
+
+    def test_aes256_decrypt(self) -> None:
+        self._assert_case(DEFAULT_CASES[5])
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Dump all internal AES block-cipher states.")
-    parser.add_argument("direction", choices=("encrypt", "decrypt"))
-    parser.add_argument("--input", required=True, help="16-byte block as hexadecimal")
-    parser.add_argument("--key", required=True, help="16-, 24-, or 32-byte key as hexadecimal")
+    parser.add_argument("direction", choices=("encrypt", "decrypt", "defaults"))
+    parser.add_argument("--input", help="16-byte block as hexadecimal")
+    parser.add_argument("--key", help="16-, 24-, or 32-byte key as hexadecimal")
     parser.add_argument("--json", action="store_true", help="write a JSON trace instead of text")
     args = parser.parse_args()
 
+    if args.direction == "defaults":
+        traces = []
+        for case in DEFAULT_CASES:
+            tracer = trace_encrypt if case["direction"] == "encrypt" else trace_decrypt
+            traces.append((case["name"], tracer(case["input"], case["key"])))
+        if args.json:
+            print(json.dumps({name: trace_as_hex(trace) for name, trace in traces}, indent=2))
+        else:
+            print("\n\n".join(dump(trace) for _, trace in traces))
+        return
+
+    if args.input is None or args.key is None:
+        parser.error("--input and --key are required for encrypt and decrypt")
     tracer: Callable[[str, str], Trace] = trace_encrypt if args.direction == "encrypt" else trace_decrypt
     trace = tracer(args.input, args.key)
     print(json.dumps(trace_as_hex(trace), indent=2) if args.json else dump(trace))
