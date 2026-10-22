@@ -86,29 +86,35 @@ async def check_aes(dut, decrypt, key_length):
 
 @cocotb.test(skip=True)
 async def test_aes128_encrypt(dut):
+    cocotb.start_soon(Clock(dut.clk, 10, unit="ns").start())
     await check_aes(dut, decrypt=False, key_length=16)
 
 
 @cocotb.test(skip=True)
 async def test_aes192_encrypt(dut):
+    cocotb.start_soon(Clock(dut.clk, 10, unit="ns").start())
     await check_aes(dut, decrypt=False, key_length=24)
 
 
 @cocotb.test(skip=True)
 async def test_aes256_encrypt(dut):
+    cocotb.start_soon(Clock(dut.clk, 10, unit="ns").start())
     await check_aes(dut, decrypt=False, key_length=32)
 
 
 @cocotb.test(skip=True)
 async def test_aes128_decrypt(dut):
+    cocotb.start_soon(Clock(dut.clk, 10, unit="ns").start())
     await check_aes(dut, decrypt=True, key_length=16)
 
 
 @cocotb.test(skip=True)
 async def test_aes192_decrypt(dut):
+    cocotb.start_soon(Clock(dut.clk, 10, unit="ns").start())
     await check_aes(dut, decrypt=True, key_length=24)
 
 
 @cocotb.test(skip=True)
 async def test_aes256_decrypt(dut):
+    cocotb.start_soon(Clock(dut.clk, 10, unit="ns").start())
     await check_aes(dut, decrypt=True, key_length=32)
