@@ -22,7 +22,7 @@ module AesTop (
 logic c_stateen;
 logic c_srow0, c_srow1, c_srow2;
 logic c_isrow0, c_isrow1, c_mixcol;
-logic c_keyen;
+logic c_loadkey, c_keyen;
 logic c_ke0, c_ke1, c_ke2, c_kxor, c_ikxor;
 logic c_add, c_sbox, c_keyexpansion;
 logic [7:0] c_rc_idx;
@@ -46,6 +46,7 @@ ControlFsm i_control_fsm (
     .c_isrow1(c_isrow1),
     .c_mixcol(c_mixcol),
     .c_stateen(c_stateen),
+    .c_loadkey(c_loadkey),
     .c_keyen(c_keyen),
     .c_ke0(c_ke0),
     .c_ke1(c_ke1),
@@ -69,6 +70,7 @@ AesCore i_aes_core (
     .c_isrow0(c_isrow0),
     .c_isrow1(c_isrow1),
     .c_mixcol(c_mixcol),
+    .c_loadkey(c_loadkey),
     .c_keyen(c_keyen),
     .c_ke0(c_ke0),
     .c_ke1(c_ke1),

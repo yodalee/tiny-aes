@@ -24,6 +24,7 @@ module ControlFsm (
 	output logic       c_isrow1,
 	output logic       c_mixcol,
     // control signals of KeyExpansion
+    output logic       c_loadkey,
 	output logic       c_keyen,
 	output logic       c_ke0,
 	output logic       c_ke1,

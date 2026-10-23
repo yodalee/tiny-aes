@@ -19,6 +19,7 @@ module AesCore (
     input        c_isrow1,
     input        c_mixcol,
     /// control of key expansion
+    input        c_loadkey,
     input        c_keyen,
     input        c_ke0,
     input        c_ke1,
@@ -85,8 +86,10 @@ RcLUT i_rc_lut (
     .o_data(rc_data)
 );
 
-byte i_key;
-assign i_key = c_ke2 ? key70 : key71;
+byte i_roundkey;
+assign i_roundkey = c_loadkey ? i_data : key00;
+byte i_sboxkey;
+assign i_sboxkey = c_ke2 ? key70 : key71;
 AddRoundKey i_add_round_key (
     .clk(clk),
     .rst_n(rst_n),
@@ -94,9 +97,9 @@ AddRoundKey i_add_round_key (
     .c_add(c_add),
     .c_sbox(c_sbox),
     .c_keyexpansion(c_keyexpansion),
-    .i_roundkey(i_key),
+    .i_roundkey(i_roundkey),
     .i_state(state_data),
-    .i_sboxkey(),
+    .i_sboxkey(i_sboxkey),
     .o_key(subkey_data),
     .o_state(added_data)
 );
