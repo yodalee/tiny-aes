@@ -175,4 +175,12 @@ assign state43 = c_mixcol ? o_mixcol[ 0+:8] : state03;
 
 assign o_state = state00;
 
+byte debug_state [16];
+assign debug_state = {
+    state00, state01, state02, state03,
+    state10, state11, state12, state13,
+    state20, state21, state22, state23,
+    state30, state31, state32, state33
+};
+
 endmodule

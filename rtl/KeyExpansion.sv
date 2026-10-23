@@ -162,5 +162,34 @@ assign o_key60 = key60;
 assign o_key70 = key70;
 assign o_key71 = key71;
 
+byte debug_key128[16];
+byte debug_key192[24];
+byte debug_key256[32];
+
+assign debug_key128 = {
+    key00, key01, key02, key03,
+    key10, key11, key12, key13,
+    key60, key61, key62, key63,
+    key70, key71, key72, key73
+};
+assign debug_key192 = {
+    key00, key01, key02, key03,
+    key10, key11, key12, key13,
+    key20, key21, key22, key23,
+    key30, key31, key32, key33,
+    key60, key61, key62, key63,
+    key70, key71, key72, key73
+};
+assign debug_key256 = {
+    key00, key01, key02, key03,
+    key10, key11, key12, key13,
+    key20, key21, key22, key23,
+    key30, key31, key32, key33,
+    key40, key41, key42, key43,
+    key50, key51, key52, key53,
+    key60, key61, key62, key63,
+    key70, key71, key72, key73
+};
+
 
 endmodule
