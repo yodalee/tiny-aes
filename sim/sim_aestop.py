@@ -10,7 +10,7 @@ from cocotb.clock import Clock
 from cocotb.triggers import RisingEdge
 
 
-DATA = bytes(range(16))
+DATA = bytes.fromhex("00112233445566778899aabbccddeeff")
 KEY_LEVEL = {16: 0b00, 24: 0b01, 32: 0b10}
 
 # AES ECB results for DATA=00112233445566778899aabbccddeeff and the
@@ -27,9 +27,7 @@ EXPECTED = {
 
 
 def as_int(value):
-    if hasattr(value, "to_unsigned"):
-        return value.to_unsigned()
-    return value.integer
+    return int(value)
 
 
 async def reset(dut):
