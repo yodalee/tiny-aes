@@ -36,7 +36,6 @@ module KeyExpansion (
     // general input of key data, from outside or key00, 20, 60
     input  byte i_key,
     input  byte i_subkey, // key byte goes through sbox/isbox
-    input  byte i_rc,
     // output from the register data
     output byte o_key00,
     output byte o_key20,
@@ -49,6 +48,19 @@ module KeyExpansion (
 // en: the key expansion pipeline is active
 logic en;
 assign en = c_en | c_kxor | c_ikxor;
+logic [7:0] c_rc_idx;
+byte rc_data;
+
+always_ff @(posedge clk or negedge rst_n) begin
+    if (!rst_n) c_rc_idx <= '0;
+    else if (c_ke0) c_rc_idx <= c_rc_idx + 8'd1;
+end
+
+RcLUT i_rc_lut (
+    .i_data(c_rc_idx),
+    .o_data(rc_data)
+);
+
 // True if we need to XOR the RC, only ke0 operation need it
 logic mux_RC;
 assign mux_RC = c_ke0;
@@ -140,7 +152,7 @@ EnableFF    i_key73 ( .clk(clk), .rst_n(rst_n), .en(en_col7), .d(key74), .q(key7
 
 // The key update path
 byte rc;
-assign rc = mux_RC ? i_rc : 8'b0;
+assign rc = mux_RC ? rc_data : 8'b0;
 byte subkey;
 assign subkey = i_subkey ^ rc;
 assign key04 = key00 ^ ((mux_Sbox)? subkey : key10);

@@ -24,8 +24,7 @@ module ControlFsm (
     output logic       c_kxor,
     output logic       c_ikxor,
     output logic       c_add,
-    output logic       c_sbox,
-    output logic [7:0] c_rc_idx
+    output logic       c_sbox
 );
 
 typedef enum logic [4:0] {
@@ -63,7 +62,6 @@ typedef enum logic [4:0] {
 typedef struct packed {
     logic c_stateen, c_srow0, c_srow1, c_srow2, c_isrow0, c_isrow1, c_mixcol;
     logic c_loadkey, c_keyen, c_ke0, c_ke1, c_ke2, c_kxor, c_ikxor, c_add, c_sbox;
-    logic [7:0] c_rc_idx;
 } CtrlSignals_t;
 
 // The LUT type is deliberately shared by all processing states.  These
@@ -968,7 +966,6 @@ assign c_kxor    = ctrl.c_kxor;
 assign c_ikxor   = ctrl.c_ikxor;
 assign c_add     = ctrl.c_add;
 assign c_sbox    = ctrl.c_sbox;
-assign c_rc_idx  = ctrl.c_rc_idx;
 
 
 endmodule
