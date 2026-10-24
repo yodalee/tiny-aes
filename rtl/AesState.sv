@@ -164,14 +164,14 @@ MuxEnableFF i_state33 (
 // Mix column instance and wiring
 int i_mixcol, o_mixcol;
 MixColumn i_mixcolumn( .i_data(i_mixcol), .o_data(o_mixcol) );
-assign i_mixcol = {state00, state01, state02, state03};
+assign i_mixcol = {state03, state02, state01, state00};
 
 // Feedback path for the fourth column. During MixColumns it carries the mixed
 // first column; otherwise it wraps the first column around for row movement.
-assign state40 = c_mixcol ? o_mixcol[24+:8] : state00;
-assign state41 = c_mixcol ? o_mixcol[16+:8] : state01;
-assign state42 = c_mixcol ? o_mixcol[ 8+:8] : state02;
-assign state43 = c_mixcol ? o_mixcol[ 0+:8] : state03;
+assign state40 = c_mixcol ? o_mixcol[ 0+:8] : state00;
+assign state41 = c_mixcol ? o_mixcol[ 8+:8] : state01;
+assign state42 = c_mixcol ? o_mixcol[16+:8] : state02;
+assign state43 = c_mixcol ? o_mixcol[24+:8] : state03;
 
 assign o_state = state00;
 
