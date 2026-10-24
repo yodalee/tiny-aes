@@ -885,7 +885,7 @@ always_comb begin
         kE128Round: if (round_q == 9) state_n = kE128Final;
         kE128Final: state_n = kOutput;
         kD128Init: state_n = kD128Round;
-        kD128Round: if (round_q == 9) state_n = kD128Final;
+        kD128Round: if (round_q == 8) state_n = kD128Final;
         kD128Final: state_n = kOutput;
         kE192Init: state_n = kE192Round1;
         kE192Round1: state_n = kE192Round2;
