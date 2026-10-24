@@ -48,7 +48,7 @@ module KeyExpansion (
 // wire derived from c_ signal
 // en: the key expansion pipeline is active
 logic en;
-assign en = c_en | c_ke0 | c_ke1 | c_ke2 | c_kxor | c_ikxor;
+assign en = c_en | c_kxor | c_ikxor;
 // True if we need to XOR the RC, only ke0 operation need it
 logic mux_RC;
 assign mux_RC = c_ke0;
@@ -63,8 +63,11 @@ logic mux_skip192;
 assign mux_skip192 = r_level == kLevel192;
 // mux12: input control
 logic [1:0] mux_input;
+assign mux_input[0] = c_ke0 | c_ke1;
+assign mux_input[1] = c_ke2;
 // Select signal for key03
 logic sel03;
+assign sel03 = c_kxor | c_ke0 | c_ke1;
 
 // wires for register output
 byte key00, key01, key02, key03;
@@ -80,12 +83,14 @@ byte key70, key71, key72, key73;
 byte key04, key14, key24, key34, key64, key74;
 
 // column 0
-EnableFF    i_key00 ( .clk(clk), .rst_n(rst_n), .en(en), .d(key01), .q(key00) );
-EnableFF    i_key01 ( .clk(clk), .rst_n(rst_n), .en(en), .d(key02), .q(key01) );
-EnableFF    i_key02 ( .clk(clk), .rst_n(rst_n), .en(en), .d(key03), .q(key02) );
+logic en_col0;
+assign en_col0 = en | c_ke0 | c_ke1 | c_ke2;
+EnableFF    i_key00 ( .clk(clk), .rst_n(rst_n), .en(en_col0), .d(key01), .q(key00) );
+EnableFF    i_key01 ( .clk(clk), .rst_n(rst_n), .en(en_col0), .d(key02), .q(key01) );
+EnableFF    i_key02 ( .clk(clk), .rst_n(rst_n), .en(en_col0), .d(key03), .q(key02) );
 MuxEnableFF i_key03 (
     .clk(clk), .rst_n(rst_n),
-    .en(en), .sel(sel03),
+    .en(en_col0), .sel(sel03),
     .d0(key10), .d1(key04), .q(key03)
 );
 
@@ -126,10 +131,12 @@ EnableFF    i_key62 ( .clk(clk), .rst_n(rst_n), .en(en), .d(key63), .q(key62) );
 EnableFF    i_key63 ( .clk(clk), .rst_n(rst_n), .en(en), .d(key64), .q(key63) );
 
 // column 7
-EnableFF    i_key70 ( .clk(clk), .rst_n(rst_n), .en(en), .d(key71), .q(key70) );
-EnableFF    i_key71 ( .clk(clk), .rst_n(rst_n), .en(en), .d(key72), .q(key71) );
-EnableFF    i_key72 ( .clk(clk), .rst_n(rst_n), .en(en), .d(key73), .q(key72) );
-EnableFF    i_key73 ( .clk(clk), .rst_n(rst_n), .en(en), .d(key74), .q(key73) );
+logic en_col7;
+assign en_col7 = en | c_ke0 | c_ke1 | c_ke2;
+EnableFF    i_key70 ( .clk(clk), .rst_n(rst_n), .en(en_col7), .d(key71), .q(key70) );
+EnableFF    i_key71 ( .clk(clk), .rst_n(rst_n), .en(en_col7), .d(key72), .q(key71) );
+EnableFF    i_key72 ( .clk(clk), .rst_n(rst_n), .en(en_col7), .d(key73), .q(key72) );
+EnableFF    i_key73 ( .clk(clk), .rst_n(rst_n), .en(en_col7), .d(key74), .q(key73) );
 
 // The key update path
 byte rc;
