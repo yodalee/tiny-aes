@@ -65,9 +65,9 @@ byte state40, state41, state42, state43;
 // Per-row enables. Row operations only enable the rows that need to move.
 logic enrow0, enrow1, enrow2, enrow3;
 assign enrow0 = c_en | c_mixcol;
-assign enrow1 = c_en | c_srow0 | c_isrow0 | c_isrow1 | c_mixcol;
-assign enrow2 = c_en | c_srow0 | c_srow1  | c_isrow1 | c_mixcol;
-assign enrow3 = c_en | c_srow0 | c_srow2  | c_mixcol;
+assign enrow1 = c_en | c_mixcol | c_srow0 | c_isrow0 | c_isrow1;
+assign enrow2 = c_en | c_mixcol | c_srow0 | c_srow1  | c_isrow1;
+assign enrow3 = c_en | c_mixcol | c_srow0 | c_srow1  | c_srow2 ;
 
 // Selects serial shift input or row/mix feedback input for the state flops.
 logic sel_row;
