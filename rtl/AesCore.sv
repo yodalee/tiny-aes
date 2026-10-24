@@ -60,6 +60,9 @@ AesState i_aes_state (
     .o_state(state_data)
 );
 
+byte i_roundkey;
+assign i_roundkey = c_loadkey ? i_data : key00;
+
 KeyExpansion i_key_expansion (
     .clk(clk),
     .rst_n(rst_n),
@@ -71,7 +74,7 @@ KeyExpansion i_key_expansion (
     .c_ke2(c_ke2),
     .c_kxor(c_kxor),
     .c_ikxor(c_ikxor),
-    .i_key(i_data),
+    .i_key(i_roundkey),
     .i_subkey(subkey_data),
     .i_rc(rc_data),
     .o_key00(key00),
@@ -86,8 +89,6 @@ RcLUT i_rc_lut (
     .o_data(rc_data)
 );
 
-byte i_roundkey;
-assign i_roundkey = c_loadkey ? i_data : key00;
 byte i_sboxkey;
 assign i_sboxkey = c_ke2 ? key70 : key71;
 AddRoundKey i_add_round_key (
