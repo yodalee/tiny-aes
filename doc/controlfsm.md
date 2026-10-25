@@ -23,7 +23,7 @@ There will be following states:
 | d128init   | 20     |                                           |
 | d128round  | 31     | repeat 10 times                           |
 | d128final  | 16     |                                           |
-| e192init   | 40     |                                           |
+| e192init   | 23     | Different to paper                        |
 | e192round1 | 20     | round 1                                   |
 | e192round2 | 23     | round 2, 5, 8, 11                         |
 | e192round3 | 23     | round 3, 6, 9                             |
@@ -59,3 +59,9 @@ localparam CtrlSignals_t kE128initLut [0:kE128InitCycles - 1] = '{
 ```
 
 By this, we can hard-coded the control signal used in that state
+
+# Some difference to the paper:
+Below are some setting that is different to the paper
+
+* E192init: since we first receive data and key into state and key buffer. There is no need for
+extra 8 cycles of load and 16 cycles to rotate the fresh key to the front.
