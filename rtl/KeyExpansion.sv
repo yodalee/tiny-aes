@@ -75,11 +75,11 @@ logic mux_skip192;
 assign mux_skip192 = r_level == kLevel192;
 // mux12: input control
 logic [1:0] mux_input;
-assign mux_input[0] = c_ke0 | c_ke1;
-assign mux_input[1] = c_ke2;
+assign mux_input[0] = c_ke0 | c_ke1 | c_ke2;
+assign mux_input[1] = 1'b0;
 // Select signal for key03
 logic sel03;
-assign sel03 = c_kxor | c_ke0 | c_ke1;
+assign sel03 = c_kxor | c_ke0 | c_ke1 | c_ke2;
 
 // wires for register output
 byte key00, key01, key02, key03;
