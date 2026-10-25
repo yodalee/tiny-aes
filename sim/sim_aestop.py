@@ -82,7 +82,7 @@ async def check_aes(dut, decrypt, key_length):
     )
 
 
-@cocotb.test(skip=True)
+@cocotb.test()
 async def test_aes128_encrypt(dut):
     cocotb.start_soon(Clock(dut.clk, 10, unit="ns").start())
     await check_aes(dut, decrypt=False, key_length=16)

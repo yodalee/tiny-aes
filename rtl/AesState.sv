@@ -65,9 +65,9 @@ byte state40, state41, state42, state43;
 // Per-row enables. Row operations only enable the rows that need to move.
 logic enrow0, enrow1, enrow2, enrow3;
 assign enrow0 = c_en | c_mixcol;
-assign enrow1 = c_en | c_srow0 | c_isrow0 | c_isrow1 | c_mixcol;
-assign enrow2 = c_en | c_srow0 | c_srow1  | c_isrow1 | c_mixcol;
-assign enrow3 = c_en | c_srow0 | c_srow2  | c_mixcol;
+assign enrow1 = c_en | c_mixcol | c_srow0 | c_isrow0 | c_isrow1;
+assign enrow2 = c_en | c_mixcol | c_srow0 | c_srow1  | c_isrow1;
+assign enrow3 = c_en | c_mixcol | c_srow0 | c_srow1  | c_srow2 ;
 
 // Selects serial shift input or row/mix feedback input for the state flops.
 logic sel_row;
@@ -164,14 +164,14 @@ MuxEnableFF i_state33 (
 // Mix column instance and wiring
 int i_mixcol, o_mixcol;
 MixColumn i_mixcolumn( .i_data(i_mixcol), .o_data(o_mixcol) );
-assign i_mixcol = {state00, state01, state02, state03};
+assign i_mixcol = {state03, state02, state01, state00};
 
 // Feedback path for the fourth column. During MixColumns it carries the mixed
 // first column; otherwise it wraps the first column around for row movement.
-assign state40 = c_mixcol ? o_mixcol[24+:8] : state00;
-assign state41 = c_mixcol ? o_mixcol[16+:8] : state01;
-assign state42 = c_mixcol ? o_mixcol[ 8+:8] : state02;
-assign state43 = c_mixcol ? o_mixcol[ 0+:8] : state03;
+assign state40 = c_mixcol ? o_mixcol[ 0+:8] : state00;
+assign state41 = c_mixcol ? o_mixcol[ 8+:8] : state01;
+assign state42 = c_mixcol ? o_mixcol[16+:8] : state02;
+assign state43 = c_mixcol ? o_mixcol[24+:8] : state03;
 
 assign o_state = state00;
 

@@ -30,8 +30,6 @@ module AesCore (
     input        c_add,
     input        c_sbox,
     input        c_keyexpansion,
-    /// rc_idx
-    input byte   c_rc_idx,
     /// Data input
     input byte   i_data,
     // Data output
@@ -42,7 +40,6 @@ byte state_data;
 byte key00, key20, key60, key70, key71;
 byte subkey_data;
 byte added_data;
-byte rc_data;
 
 byte i_state;
 assign i_state = c_add ? added_data : i_data;
@@ -60,6 +57,9 @@ AesState i_aes_state (
     .o_state(state_data)
 );
 
+byte i_roundkey;
+assign i_roundkey = c_loadkey ? i_data : key00;
+
 KeyExpansion i_key_expansion (
     .clk(clk),
     .rst_n(rst_n),
@@ -71,9 +71,8 @@ KeyExpansion i_key_expansion (
     .c_ke2(c_ke2),
     .c_kxor(c_kxor),
     .c_ikxor(c_ikxor),
-    .i_key(i_data),
+    .i_key(i_roundkey),
     .i_subkey(subkey_data),
-    .i_rc(rc_data),
     .o_key00(key00),
     .o_key20(key20),
     .o_key60(key60),
@@ -81,13 +80,6 @@ KeyExpansion i_key_expansion (
     .o_key71(key71)
 );
 
-RcLUT i_rc_lut (
-    .i_data(c_rc_idx),
-    .o_data(rc_data)
-);
-
-byte i_roundkey;
-assign i_roundkey = c_loadkey ? i_data : key00;
 byte i_sboxkey;
 assign i_sboxkey = c_ke2 ? key70 : key71;
 AddRoundKey i_add_round_key (
