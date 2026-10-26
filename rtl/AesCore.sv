@@ -66,6 +66,7 @@ KeyExpansion i_key_expansion (
     .r_dec(r_dec),
     .r_level(r_level),
     .c_en(c_keyen),
+    .c_loadkey(c_loadkey),
     .c_ke0(c_ke0),
     .c_ke1(c_ke1),
     .c_ke2(c_ke2),

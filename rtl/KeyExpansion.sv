@@ -32,6 +32,9 @@ module KeyExpansion (
     input [1:0] r_level,
     // control signal, prefix with c_, should be one-hot
     input       c_en,
+    // High while the transaction key is being loaded.  This resets the
+    // round-constant sequence for every operation.
+    input       c_loadkey,
     // The control signal below should be one-hot
     input       c_ke0,
     input       c_ke1,
@@ -63,7 +66,20 @@ assign is256 = r_level == kLevel256;
 
 always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) c_rc_idx <= '0;
-    else if (c_ke0) c_rc_idx <= c_rc_idx + 8'd1;
+    else if (c_loadkey) begin
+        // Decryption reconstructs the key schedule in reverse.  Start at
+        // the final Rcon used by each AES key size: 10th, 8th, or 7th Rcon.
+        if (r_dec) begin
+            case (r_level)
+                kLevel128: c_rc_idx <= 8'd9;
+                kLevel192: c_rc_idx <= 8'd7;
+                default:   c_rc_idx <= 8'd6; // kLevel256
+            endcase
+        end else c_rc_idx <= '0;
+    end else if (c_ke0) begin
+        if (r_dec) c_rc_idx <= c_rc_idx - 8'd1;
+        else       c_rc_idx <= c_rc_idx + 8'd1;
+    end
 end
 
 RcLUT i_rc_lut (
