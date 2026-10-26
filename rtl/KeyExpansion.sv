@@ -12,12 +12,17 @@
 //         Example usage k48 <- k16 xor S(k44), Only used in AES256.c_ke0
 //         Note that first row will be k16, k20, k24, k28, k32, k36, k40, k44
 // 5. kxor:
-// 6. ikxor
 //         general use, (16-4), (24-4), (32-8) kxor operation in AES128, 192, 256
 //         Example usage k20 <- k4 xor k16
+// 6. ikxor
+//         ikxor operation, activate 3 xor to the input of last row. Example usage in Aes128
+//          k4  = k16 xor k20
+//          k8  = k20 xor k24
+//          k12 = k24 xor k24
 
 import AesPkg::kLevel128;
 import AesPkg::kLevel192;
+import AesPkg::kLevel256;
 
 module KeyExpansion (
     input       clk,
@@ -50,6 +55,11 @@ logic en;
 assign en = c_en | c_kxor | c_ikxor;
 logic [7:0] c_rc_idx;
 byte rc_data;
+
+logic is128, is192, is256;
+assign is128 = r_level == kLevel128;
+assign is192 = r_level == kLevel192;
+assign is256 = r_level == kLevel256;
 
 always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) c_rc_idx <= '0;
@@ -158,21 +168,22 @@ assign subkey = i_subkey ^ rc;
 assign key04 = key00 ^ ((mux_Sbox)? subkey : key10);
 
 // The select input for decrypt and level
-// TODO: key14, 24, 34, 64, 74 need to deal with sel1, 2, 3, 6, 7 for decryption
-assign key14 = mux_skip128 ? key60 : key20;
-assign key24 = key30;
-assign key34 = mux_skip192 ? key60 : key40;
-assign key64 = key70;
+// The active table of ikxor state
+// 1. key14 = key10 ^ (key20 or key 60)
+// 2. key24 = key20 ^ key30
+// 3. key34 = key30 ^ (key40 or key 60)
+// 4. key64 = key60 ^ key20
+// 5. key74 = key70 ^ key00
+// In Aes128, ikxor activate 1, 4, 5
+// In Aes192, ikxor activate 3, 4, 5
+// In Aes256, ikxor activate 1, 2, 3
+assign key14 = ((c_ikxor && (is128 || is256)) ? key10 : 8'd0) ^ (is128 ? key60 : key20);
+assign key24 = ((c_ikxor && is256) ? key20 : 8'd0) ^ key30 ;
+// since column 3 is not activate in Aes128, we can simplified to to c_ikxor
+assign key34 = ((c_ikxor) ? key30 : 8'd0) ^ (is192 ? key60 : key40);
+assign key64 = ((c_ikxor && (is128 || is192)) ? key60 : 8'd0) ^ key70;
+assign key74 = ((c_ikxor && (is128 || is192)) ? key70 : 8'd0) ^ (mux_input[0] ? key70 : i_key);
 
-always_comb begin : comb_key74
-if (mux_input == 2'b01) begin
-    key74 = key70;
-end else if (mux_input == 2'b10) begin
-    key74 = key00;
-end else begin
-    key74 = i_key;
-end
-end
 
 // output port
 assign o_key00 = key00;
