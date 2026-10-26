@@ -46,7 +46,7 @@ SboxLut i_sbox (
 // the output to key state (key expansion) always need the sbox
 assign o_key = sbox_out;
 
-assign o_state = (c_sbox) ? sbox_out ^ add_after : sbox_in;
+assign o_state = add_after ^ ((c_sbox) ? sbox_out : sbox_in);
 
 
 endmodule
