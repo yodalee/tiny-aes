@@ -38,7 +38,7 @@ byte sbox_in, sbox_out;
 assign sbox_in = (c_keyexpansion) ? i_sboxkey : i_state ^ add_before;
 
 SboxLut i_sbox (
-    .c_inv(r_dec),
+    .c_inv(r_dec && c_sbox),
     .i_data(sbox_in),
     .o_data(sbox_out)
 );
