@@ -38,7 +38,7 @@ byte sbox_in, sbox_out;
 assign sbox_in = (c_keyexpansion) ? i_sboxkey : i_state ^ add_before;
 
 SboxLut i_sbox (
-    .c_inv(r_dec),
+    .c_inv(r_dec && c_sbox),
     .i_data(sbox_in),
     .o_data(sbox_out)
 );
@@ -46,7 +46,7 @@ SboxLut i_sbox (
 // the output to key state (key expansion) always need the sbox
 assign o_key = sbox_out;
 
-assign o_state = (c_sbox) ? sbox_out ^ add_after : sbox_in;
+assign o_state = add_after ^ ((c_sbox) ? sbox_out : sbox_in);
 
 
 endmodule
