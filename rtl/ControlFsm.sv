@@ -23,6 +23,9 @@ module ControlFsm (
     output logic       c_ke2,
     output logic       c_kxor,
     output logic       c_ikxor,
+    // special control for decryption 192
+    // [key20, key60]
+    output logic [1:0] c_dec192_keysel,
     output logic       c_add,
     output logic       c_sbox
 );
@@ -62,6 +65,7 @@ typedef enum logic [4:0] {
 typedef struct packed {
     logic c_stateen, c_srow0, c_srow1, c_srow2, c_isrow0, c_isrow1, c_mixcol;
     logic c_loadkey, c_keyen, c_ke0, c_ke1, c_ke2, c_kxor, c_ikxor, c_add, c_sbox;
+    logic [1:0] c_dec192_keysel;
 } CtrlSignals_t;
 
 // The LUT type is deliberately shared by all processing states.  These
@@ -932,22 +936,23 @@ assign i_ready = state == kLoadData || state == kLoadKey;
 assign o_valid = state == kOutput;
 
 // control signal
-assign c_stateen = ctrl.c_stateen;
-assign c_srow0   = ctrl.c_srow0;
-assign c_srow1   = ctrl.c_srow1;
-assign c_srow2   = ctrl.c_srow2;
-assign c_isrow0  = ctrl.c_isrow0;
-assign c_isrow1  = ctrl.c_isrow1;
-assign c_mixcol  = ctrl.c_mixcol;
-assign c_loadkey = ctrl.c_loadkey;
-assign c_keyen   = ctrl.c_keyen;
-assign c_ke0     = ctrl.c_ke0;
-assign c_ke1     = ctrl.c_ke1;
-assign c_ke2     = ctrl.c_ke2;
-assign c_kxor    = ctrl.c_kxor;
-assign c_ikxor   = ctrl.c_ikxor;
-assign c_add     = ctrl.c_add;
-assign c_sbox    = ctrl.c_sbox;
+assign c_stateen       = ctrl.c_stateen;
+assign c_srow0         = ctrl.c_srow0;
+assign c_srow1         = ctrl.c_srow1;
+assign c_srow2         = ctrl.c_srow2;
+assign c_isrow0        = ctrl.c_isrow0;
+assign c_isrow1        = ctrl.c_isrow1;
+assign c_mixcol        = ctrl.c_mixcol;
+assign c_loadkey       = ctrl.c_loadkey;
+assign c_keyen         = ctrl.c_keyen;
+assign c_ke0           = ctrl.c_ke0;
+assign c_ke1           = ctrl.c_ke1;
+assign c_ke2           = ctrl.c_ke2;
+assign c_kxor          = ctrl.c_kxor;
+assign c_ikxor         = ctrl.c_ikxor;
+assign c_add           = ctrl.c_add;
+assign c_sbox          = ctrl.c_sbox;
+assign c_dec192_keysel = ctrl.c_dec192_keysel;
 
 
 endmodule

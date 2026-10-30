@@ -26,6 +26,7 @@ module AesCore (
     input        c_ke2,
     input        c_kxor,
     input        c_ikxor,
+    input [1:0]  c_dec192_keysel,
     /// control of sbox
     input        c_add,
     input        c_sbox,
@@ -58,7 +59,17 @@ AesState i_aes_state (
 );
 
 byte i_roundkey;
-assign i_roundkey = c_loadkey ? i_data : key00;
+always_comb begin : mux_roundkey
+  i_roundkey = key00;
+  if (c_loadkey) begin
+    i_roundkey = i_data;
+  end
+  else if (c_dec192_keysel[1]) begin
+    i_roundkey = key20;
+  end else if (c_dec192_keysel[0]) begin
+    i_roundkey = key60;
+  end
+end
 
 KeyExpansion i_key_expansion (
     .clk(clk),
