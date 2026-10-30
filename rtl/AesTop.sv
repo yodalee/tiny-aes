@@ -23,7 +23,9 @@ logic c_stateen;
 logic c_srow0, c_srow1, c_srow2;
 logic c_isrow0, c_isrow1, c_mixcol;
 logic c_loadkey, c_keyen;
-logic c_ke0, c_ke1, c_ke2, c_kxor, c_ikxor;
+logic c_ke0, c_ke1, c_ke2, c_kxor;
+logic [4:0] c_ikxor;
+logic [1:0] c_dec192_keysel;
 logic c_add, c_sbox, c_keyexpansion;
 byte core_data;
 
@@ -52,6 +54,7 @@ ControlFsm i_control_fsm (
     .c_ke2(c_ke2),
     .c_kxor(c_kxor),
     .c_ikxor(c_ikxor),
+    .c_dec192_keysel(c_dec192_keysel),
     .c_add(c_add),
     .c_sbox(c_sbox)
 );
@@ -75,6 +78,7 @@ AesCore i_aes_core (
     .c_ke2(c_ke2),
     .c_kxor(c_kxor),
     .c_ikxor(c_ikxor),
+    .c_dec192_keysel(c_dec192_keysel),
     .c_add(c_add),
     .c_sbox(c_sbox),
     .c_keyexpansion(c_keyexpansion),

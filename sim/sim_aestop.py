@@ -121,7 +121,7 @@ async def test_aes128_decrypt(dut):
     await check_aes(dut, decrypt=True, key_length=16)
 
 
-@cocotb.test(skip=True)  # Decryption microcode is not implemented in ControlFsm yet.
+@cocotb.test()
 async def test_aes192_decrypt(dut):
     cocotb.start_soon(Clock(dut.clk, 10, unit="ns").start())
     await check_aes(dut, decrypt=True, key_length=24)

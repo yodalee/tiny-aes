@@ -25,7 +25,9 @@ module AesCore (
     input        c_ke1,
     input        c_ke2,
     input        c_kxor,
-    input        c_ikxor,
+    // Per-bypass enable mask: [5:0] = {key74, key64, key34, key24, key14, key04}.
+    input [4:0]  c_ikxor,
+    input [1:0]  c_dec192_keysel,
     /// control of sbox
     input        c_add,
     input        c_sbox,
@@ -58,7 +60,17 @@ AesState i_aes_state (
 );
 
 byte i_roundkey;
-assign i_roundkey = c_loadkey ? i_data : key00;
+always_comb begin : mux_roundkey
+  i_roundkey = key00;
+  if (c_loadkey) begin
+    i_roundkey = i_data;
+  end
+  else if (c_dec192_keysel[1]) begin
+    i_roundkey = key20;
+  end else if (c_dec192_keysel[0]) begin
+    i_roundkey = key60;
+  end
+end
 
 KeyExpansion i_key_expansion (
     .clk(clk),
@@ -72,6 +84,7 @@ KeyExpansion i_key_expansion (
     .c_ke2(c_ke2),
     .c_kxor(c_kxor),
     .c_ikxor(c_ikxor),
+    .c_dec192_keysel(c_dec192_keysel),
     .i_key(i_roundkey),
     .i_subkey(subkey_data),
     .o_key00(key00),
