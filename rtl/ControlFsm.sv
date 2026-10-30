@@ -886,8 +886,8 @@ always_comb begin
         kE256Round4: state_n = kE256Round3;
         kE256Final: state_n = kOutput;
         kD256Init: state_n = kD256Round1;
-        kD256Round1: state_n = kD256Round2;
-        kD256Round2: state_n = round_q == 11 ? kD256Final : kD256Round1;
+        kD256Round1: state_n = round_q == 12 ? kD256Final : kD256Round2;
+        kD256Round2: state_n = kD256Round1;
         kD256Final: state_n = kOutput;
         kOutput: if (o_ready && cycle_q == 15) state_n = kLoadData;
         default: state_n = kLoadData;
