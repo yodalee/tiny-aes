@@ -41,6 +41,7 @@ module KeyExpansion (
     input       c_ke2,
     input       c_kxor,
     input       c_ikxor,
+    input [1:0] c_dec192_keysel,
     // general input of key data, from outside or key00, 20, 60
     input  byte i_key,
     input  byte i_subkey, // key byte goes through sbox/isbox
@@ -102,7 +103,7 @@ assign mux_skip192 = r_level == kLevel192;
 // mux12: input control
 logic [1:0] mux_input;
 assign mux_input[0] = c_ke0 | c_ke1 | c_ke2;
-assign mux_input[1] = 1'b0;
+assign mux_input[1] = c_dec192_keysel[0] || c_dec192_keysel[1];
 // Select signal for key03
 logic sel03;
 assign sel03 = c_kxor | c_ke0 | c_ke1 | c_ke2;
@@ -198,7 +199,10 @@ assign key24 = ((c_ikxor && is256) ? key20 : 8'd0) ^ key30 ;
 // since column 3 is not activate in Aes128, we can simplified to to c_ikxor
 assign key34 = ((c_ikxor) ? key30 : 8'd0) ^ (is192 ? key60 : key40);
 assign key64 = ((c_ikxor && (is128 || is192)) ? key60 : 8'd0) ^ key70;
-assign key74 = ((c_ikxor && (is128 || is192)) ? key70 : 8'd0) ^ (mux_input[0] ? key70 : i_key);
+byte key74_a, key74_b;
+assign key74_a = ((c_ikxor && (is128 || is192)) ? key70 : 8'd0);
+assign key74_b = mux_input[1] ? key00 : (mux_input[0] ? key70 : i_key);
+assign key74 = key74_a ^ key74_b;
 
 
 // output port

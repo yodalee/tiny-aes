@@ -83,6 +83,7 @@ KeyExpansion i_key_expansion (
     .c_ke2(c_ke2),
     .c_kxor(c_kxor),
     .c_ikxor(c_ikxor),
+    .c_dec192_keysel(c_dec192_keysel),
     .i_key(i_roundkey),
     .i_subkey(subkey_data),
     .o_key00(key00),
