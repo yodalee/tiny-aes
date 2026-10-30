@@ -25,7 +25,8 @@ module AesCore (
     input        c_ke1,
     input        c_ke2,
     input        c_kxor,
-    input        c_ikxor,
+    // Per-bypass enable mask: [5:0] = {key74, key64, key34, key24, key14, key04}.
+    input [4:0]  c_ikxor,
     input [1:0]  c_dec192_keysel,
     /// control of sbox
     input        c_add,

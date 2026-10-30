@@ -40,7 +40,8 @@ module KeyExpansion (
     input       c_ke1,
     input       c_ke2,
     input       c_kxor,
-    input       c_ikxor,
+    // Per-bypass enable mask: [5:0] = {key74, key64, key34, key24, key14, key04}.
+    input [4:0] c_ikxor,
     input [1:0] c_dec192_keysel,
     // general input of key data, from outside or key00, 20, 60
     input  byte i_key,
@@ -56,7 +57,7 @@ module KeyExpansion (
 // wire derived from c_ signal
 // en: the key expansion pipeline is active
 logic en;
-assign en = c_en | c_kxor | c_ikxor;
+assign en = c_en | c_kxor | (|c_ikxor);
 logic [7:0] c_rc_idx;
 byte rc_data;
 
@@ -184,23 +185,14 @@ byte subkey;
 assign subkey = i_subkey ^ rc;
 assign key04 = key00 ^ ((mux_Sbox)? subkey : key10);
 
-// The select input for decrypt and level
-// The active table of ikxor state
-// 1. key14 = key10 ^ (key20 or key 60)
-// 2. key24 = key20 ^ key30
-// 3. key34 = key30 ^ (key40 or key 60)
-// 4. key64 = key60 ^ key20
-// 5. key74 = key70 ^ key00
-// In Aes128, ikxor activate 1, 4, 5
-// In Aes192, ikxor activate 3, 4, 5
-// In Aes256, ikxor activate 1, 2, 3
-assign key14 = ((c_ikxor && (is128 || is256)) ? key10 : 8'd0) ^ (is128 ? key60 : key20);
-assign key24 = ((c_ikxor && is256) ? key20 : 8'd0) ^ key30 ;
-// since column 3 is not activate in Aes128, we can simplified to to c_ikxor
-assign key34 = ((c_ikxor) ? key30 : 8'd0) ^ (is192 ? key60 : key40);
-assign key64 = ((c_ikxor && (is128 || is192)) ? key60 : 8'd0) ^ key70;
+// Inverse-key XOR bypasses.  Each bit controls exactly one phantom input:
+// [4:0] = {key14, key24, key34, key64, key74}.
+assign key14 = (c_ikxor[4] ? key10 : 8'd0) ^ (is128 ? key60 : key20);
+assign key24 = (c_ikxor[3] ? key20 : 8'd0) ^ key30;
+assign key34 = (c_ikxor[2] ? key30 : 8'd0) ^ (is192 ? key60 : key40);
+assign key64 = (c_ikxor[1] ? key60 : 8'd0) ^ key70;
 byte key74_a, key74_b;
-assign key74_a = ((c_ikxor && (is128 || is192)) ? key70 : 8'd0);
+assign key74_a = c_ikxor[0] ? key70 : 8'd0;
 assign key74_b = mux_input[1] ? key00 : (mux_input[0] ? key70 : i_key);
 assign key74 = key74_a ^ key74_b;
 

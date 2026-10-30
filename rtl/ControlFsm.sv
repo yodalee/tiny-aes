@@ -22,7 +22,8 @@ module ControlFsm (
     output logic       c_ke1,
     output logic       c_ke2,
     output logic       c_kxor,
-    output logic       c_ikxor,
+    // Per-bypass enable mask: [5:0] = {key74, key64, key34, key24, key14, key04}.
+    output logic [4:0] c_ikxor,
     // special control for decryption 192
     // [key20, key60]
     output logic [1:0] c_dec192_keysel,
@@ -64,7 +65,8 @@ typedef enum logic [4:0] {
 
 typedef struct packed {
     logic c_stateen, c_srow0, c_srow1, c_srow2, c_isrow0, c_isrow1, c_mixcol;
-    logic c_loadkey, c_keyen, c_ke0, c_ke1, c_ke2, c_kxor, c_ikxor, c_add, c_sbox;
+    logic c_loadkey, c_keyen, c_ke0, c_ke1, c_ke2, c_kxor, c_add, c_sbox;
+    logic [4:0] c_ikxor;
     logic [1:0] c_dec192_keysel;
 } CtrlSignals_t;
 
@@ -149,10 +151,10 @@ localparam CtrlSignals_t kD128InitLut   [0:19] = {
     '{c_stateen: 1'b1, c_keyen: 1'b1, c_add: 1'b1, default:'0},
     '{c_stateen: 1'b1, c_keyen: 1'b1, c_add: 1'b1, default:'0},
     '{c_stateen: 1'b1, c_keyen: 1'b1, c_add: 1'b1, default:'0},
-    '{c_stateen: 1'b1, c_keyen: 1'b1, c_ikxor: 1'b1, c_add: 1'b1, default:'0},
-    '{c_stateen: 1'b1, c_keyen: 1'b1, c_ikxor: 1'b1, c_add: 1'b1, default:'0},
-    '{c_stateen: 1'b1, c_keyen: 1'b1, c_ikxor: 1'b1, c_add: 1'b1, default:'0},
-    '{c_stateen: 1'b1, c_keyen: 1'b1, c_ikxor: 1'b1, c_add: 1'b1, default:'0},
+    '{c_stateen: 1'b1, c_keyen: 1'b1, c_ikxor: 5'b10011, c_add: 1'b1, default:'0},
+    '{c_stateen: 1'b1, c_keyen: 1'b1, c_ikxor: 5'b10011, c_add: 1'b1, default:'0},
+    '{c_stateen: 1'b1, c_keyen: 1'b1, c_ikxor: 5'b10011, c_add: 1'b1, default:'0},
+    '{c_stateen: 1'b1, c_keyen: 1'b1, c_ikxor: 5'b10011, c_add: 1'b1, default:'0},
     '{c_srow0: 1'b1,   c_ke0: 1'b1, default:'0},
     '{c_isrow0: 1'b1,  c_ke1: 1'b1, default:'0},
     '{c_isrow1: 1'b1,  c_ke1: 1'b1, default:'0},
@@ -171,10 +173,10 @@ localparam CtrlSignals_t kD128RoundLut  [0:30] = {
     '{c_stateen: 1'b1, c_keyen: 1'b1, c_add: 1'b1, c_sbox: 1'b1, default:'0},
     '{c_stateen: 1'b1, c_keyen: 1'b1, c_add: 1'b1, c_sbox: 1'b1, default:'0},
     '{c_stateen: 1'b1, c_keyen: 1'b1, c_add: 1'b1, c_sbox: 1'b1, default:'0},
-    '{c_stateen: 1'b1, c_keyen: 1'b1, c_ikxor: 1'b1, c_add: 1'b1, c_sbox: 1'b1, default:'0},
-    '{c_stateen: 1'b1, c_keyen: 1'b1, c_ikxor: 1'b1, c_add: 1'b1, c_sbox: 1'b1, default:'0},
-    '{c_stateen: 1'b1, c_keyen: 1'b1, c_ikxor: 1'b1, c_add: 1'b1, c_sbox: 1'b1, default:'0},
-    '{c_stateen: 1'b1, c_keyen: 1'b1, c_ikxor: 1'b1, c_add: 1'b1, c_sbox: 1'b1, default:'0},
+    '{c_stateen: 1'b1, c_keyen: 1'b1, c_ikxor: 5'b10011, c_add: 1'b1, c_sbox: 1'b1, default:'0},
+    '{c_stateen: 1'b1, c_keyen: 1'b1, c_ikxor: 5'b10011, c_add: 1'b1, c_sbox: 1'b1, default:'0},
+    '{c_stateen: 1'b1, c_keyen: 1'b1, c_ikxor: 5'b10011, c_add: 1'b1, c_sbox: 1'b1, default:'0},
+    '{c_stateen: 1'b1, c_keyen: 1'b1, c_ikxor: 5'b10011, c_add: 1'b1, c_sbox: 1'b1, default:'0},
     '{c_mixcol: 1'b1, c_ke0: 1'b1, default:'0},
     '{c_mixcol: 1'b1, c_ke1: 1'b1, default:'0},
     '{c_mixcol: 1'b1, c_ke1: 1'b1, default:'0},
@@ -708,10 +710,10 @@ localparam CtrlSignals_t kD256R1Lut     [0:30] = {
     '{c_stateen: 1'b1, c_keyen: 1'b1, c_add: 1'b1, c_sbox: 1'b1, default:'0},
     '{c_stateen: 1'b1, c_keyen: 1'b1, c_add: 1'b1, c_sbox: 1'b1, default:'0},
     '{c_stateen: 1'b1, c_keyen: 1'b1, c_add: 1'b1, c_sbox: 1'b1, default:'0},
-    '{c_stateen: 1'b1, c_keyen: 1'b1, c_ikxor: 1'b1, c_add: 1'b1, c_sbox: 1'b1, default:'0},
-    '{c_stateen: 1'b1, c_keyen: 1'b1, c_ikxor: 1'b1, c_add: 1'b1, c_sbox: 1'b1, default:'0},
-    '{c_stateen: 1'b1, c_keyen: 1'b1, c_ikxor: 1'b1, c_add: 1'b1, c_sbox: 1'b1, default:'0},
-    '{c_stateen: 1'b1, c_keyen: 1'b1, c_ikxor: 1'b1, c_add: 1'b1, c_sbox: 1'b1, default:'0},
+    '{c_stateen: 1'b1, c_keyen: 1'b1, c_ikxor: 5'b11100, c_add: 1'b1, c_sbox: 1'b1, default:'0},
+    '{c_stateen: 1'b1, c_keyen: 1'b1, c_ikxor: 5'b11100, c_add: 1'b1, c_sbox: 1'b1, default:'0},
+    '{c_stateen: 1'b1, c_keyen: 1'b1, c_ikxor: 5'b11100, c_add: 1'b1, c_sbox: 1'b1, default:'0},
+    '{c_stateen: 1'b1, c_keyen: 1'b1, c_ikxor: 5'b11100, c_add: 1'b1, c_sbox: 1'b1, default:'0},
     '{c_mixcol: 1'b1, c_ke0: 1'b1, default:'0},
     '{c_mixcol: 1'b1, c_ke1: 1'b1, default:'0},
     '{c_mixcol: 1'b1, c_ke1: 1'b1, default:'0},
@@ -741,10 +743,10 @@ localparam CtrlSignals_t kD256R2Lut     [0:30] = {
     '{c_stateen: 1'b1, c_keyen: 1'b1, c_add: 1'b1, c_sbox: 1'b1, default:'0},
     '{c_stateen: 1'b1, c_keyen: 1'b1, c_add: 1'b1, c_sbox: 1'b1, default:'0},
     '{c_stateen: 1'b1, c_keyen: 1'b1, c_add: 1'b1, c_sbox: 1'b1, default:'0},
-    '{c_stateen: 1'b1, c_keyen: 1'b1, c_ikxor: 1'b1, c_add: 1'b1, c_sbox: 1'b1, default:'0},
-    '{c_stateen: 1'b1, c_keyen: 1'b1, c_ikxor: 1'b1, c_add: 1'b1, c_sbox: 1'b1, default:'0},
-    '{c_stateen: 1'b1, c_keyen: 1'b1, c_ikxor: 1'b1, c_add: 1'b1, c_sbox: 1'b1, default:'0},
-    '{c_stateen: 1'b1, c_keyen: 1'b1, c_ikxor: 1'b1, c_add: 1'b1, c_sbox: 1'b1, default:'0},
+    '{c_stateen: 1'b1, c_keyen: 1'b1, c_ikxor: 5'b11100, c_add: 1'b1, c_sbox: 1'b1, default:'0},
+    '{c_stateen: 1'b1, c_keyen: 1'b1, c_ikxor: 5'b11100, c_add: 1'b1, c_sbox: 1'b1, default:'0},
+    '{c_stateen: 1'b1, c_keyen: 1'b1, c_ikxor: 5'b11100, c_add: 1'b1, c_sbox: 1'b1, default:'0},
+    '{c_stateen: 1'b1, c_keyen: 1'b1, c_ikxor: 5'b11100, c_add: 1'b1, c_sbox: 1'b1, default:'0},
     '{c_mixcol: 1'b1, c_ke2: 1'b1, default:'0},
     '{c_mixcol: 1'b1, c_ke2: 1'b1, default:'0},
     '{c_mixcol: 1'b1, c_ke2: 1'b1, default:'0},
