@@ -12,6 +12,7 @@ EXTRA_ARGS += -Wno-UNOPTFLAT
 # for GTKWave.
 ifeq ($(DUMP),1)
 EXTRA_ARGS += --trace --trace-fst --trace-structs
+EXTRA_ARGS += -DDEBUG
 endif
 
 include $(shell cocotb-config --makefiles)/Makefile.sim

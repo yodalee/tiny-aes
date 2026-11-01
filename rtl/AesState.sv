@@ -175,6 +175,7 @@ assign state43 = c_mixcol ? o_mixcol[24+:8] : state03;
 
 assign o_state = state00;
 
+`ifdef DEBUG
 byte debug_state [16];
 assign debug_state = {
     state00, state01, state02, state03,
@@ -182,5 +183,6 @@ assign debug_state = {
     state20, state21, state22, state23,
     state30, state31, state32, state33
 };
+`endif
 
 endmodule

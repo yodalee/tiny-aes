@@ -204,6 +204,7 @@ assign o_key60 = key60;
 assign o_key70 = key70;
 assign o_key71 = key71;
 
+`ifdef DEBUG
 byte debug_key128[16];
 byte debug_key192[24];
 byte debug_key256[32];
@@ -232,6 +233,7 @@ assign debug_key256 = {
     key60, key61, key62, key63,
     key70, key71, key72, key73
 };
+`endif
 
 
 endmodule
