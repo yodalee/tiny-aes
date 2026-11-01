@@ -6,8 +6,6 @@ tests are ready for the same round-trip vectors but remain skipped until
 ControlFsm has decryption microcode.
 """
 
-import random
-
 import cocotb
 from cocotb.clock import Clock
 from cocotb.triggers import ReadWrite, RisingEdge
@@ -15,6 +13,8 @@ from cocotb.triggers import ReadWrite, RisingEdge
 
 DATA = bytes.fromhex("00112233445566778899aabbccddeeff")
 KEY_LEVEL = {16: 0b00, 24: 0b01, 32: 0b10}
+INPUT_STROBE_CYCLES = 5
+OUTPUT_STROBE_CYCLES = 4
 
 # AES ECB results for DATA=00112233445566778899aabbccddeeff and the
 # incrementing key of the corresponding length.  These are the three FIPS-197
@@ -52,8 +52,8 @@ async def reset(dut):
     await RisingEdge(dut.clk)
 
 
-async def run_aes(dut, decrypt, input_bytes, key_bytes, rng):
-    """Run one transaction with random valid/ready stalls.
+async def run_aes(dut, decrypt, input_bytes, key_bytes):
+    """Run one transaction with periodic valid/ready software strobes.
 
     After every rising edge, this coroutine waits for the writable simulation
     phase and selects signals for the *next* rising edge.  Thus it uses no
@@ -72,10 +72,9 @@ async def run_aes(dut, decrypt, input_bytes, key_bytes, rng):
     pending_input_taken = False
     pending_output_data = None
 
-    # A fixed seed is supplied by each test, so failures remain reproducible.
-    # The probabilities give both interfaces regular gaps without making test
-    # time unnecessarily long.
-    for _ in range(10_000):
+    # Software issues exactly one input request every five cycles.  The output
+    # consumer accepts exactly one byte every four cycles.
+    for cycle in range(10_000):
         # RisingEdge itself can resume before all clocked and combinational
         # RTL processes have run.  ReadWrite makes the current-cycle signals
         # stable, while still allowing us to drive the next-cycle handshake.
@@ -92,16 +91,19 @@ async def run_aes(dut, decrypt, input_bytes, key_bytes, rng):
 
         # These are the DUT values for the current cycle.  The handshake we
         # arrange below is sampled at the next rising edge.
+        o_ready = cycle % OUTPUT_STROBE_CYCLES == 0
+        dut.o_ready.value = o_ready
+
         o_valid = as_int(dut.o_valid.value)
         o_data = as_int(dut.o_data.value)
-        o_ready = rng.random() < 0.70
-        dut.o_ready.value = o_ready
         pending_output_data = o_data if o_valid and o_ready else None
 
-        # Randomly insert bubbles on the input stream.  Once valid is high,
-        # retain both it and its byte until a real valid/ready transfer.
-        if not input_valid and input_index < len(input_stream):
-            input_valid = rng.random() < 0.70
+        # i_valid is a one-clock software strobe, not a sustained streaming
+        # valid.  A byte not accepted at its slot is retried five cycles later.
+        input_valid = (
+            cycle % INPUT_STROBE_CYCLES == 0
+            and input_index < len(input_stream)
+        )
         dut.i_valid.value = input_valid
         dut.i_data.value = input_stream[input_index] if input_valid else 0
         pending_input_taken = input_valid and as_int(dut.i_ready.value)
@@ -115,7 +117,7 @@ async def run_aes(dut, decrypt, input_bytes, key_bytes, rng):
     )
 
 
-async def check_aes(dut, decrypt, key_length, seed):
+async def check_aes(dut, decrypt, key_length):
     if decrypt:
         input_bytes = EXPECTED[key_length]
         key_bytes = DECRYPTION_KEY_STATE[key_length]
@@ -124,9 +126,7 @@ async def check_aes(dut, decrypt, key_length, seed):
         input_bytes = DATA
         key_bytes = bytes(range(key_length))
         expected = EXPECTED[key_length]
-    actual = await run_aes(
-        dut, decrypt, input_bytes, key_bytes, rng=random.Random(seed)
-    )
+    actual = await run_aes(dut, decrypt, input_bytes, key_bytes)
     direction = "decrypt" if decrypt else "encrypt"
     assert actual == expected, (
         f"AES-{key_length * 8} {direction} returned {actual.hex()}, "
@@ -137,34 +137,34 @@ async def check_aes(dut, decrypt, key_length, seed):
 @cocotb.test()
 async def test_aes128_encrypt(dut):
     cocotb.start_soon(Clock(dut.clk, 10, unit="ns").start())
-    await check_aes(dut, decrypt=False, key_length=16, seed=0x128E)
+    await check_aes(dut, decrypt=False, key_length=16)
 
 
 @cocotb.test()
 async def test_aes192_encrypt(dut):
     cocotb.start_soon(Clock(dut.clk, 10, unit="ns").start())
-    await check_aes(dut, decrypt=False, key_length=24, seed=0x192E)
+    await check_aes(dut, decrypt=False, key_length=24)
 
 
 @cocotb.test()
 async def test_aes256_encrypt(dut):
     cocotb.start_soon(Clock(dut.clk, 10, unit="ns").start())
-    await check_aes(dut, decrypt=False, key_length=32, seed=0x256E)
+    await check_aes(dut, decrypt=False, key_length=32)
 
 
 @cocotb.test()
 async def test_aes128_decrypt(dut):
     cocotb.start_soon(Clock(dut.clk, 10, unit="ns").start())
-    await check_aes(dut, decrypt=True, key_length=16, seed=0x128D)
+    await check_aes(dut, decrypt=True, key_length=16)
 
 
 @cocotb.test()
 async def test_aes192_decrypt(dut):
     cocotb.start_soon(Clock(dut.clk, 10, unit="ns").start())
-    await check_aes(dut, decrypt=True, key_length=24, seed=0x192D)
+    await check_aes(dut, decrypt=True, key_length=24)
 
 
 @cocotb.test()
 async def test_aes256_decrypt(dut):
     cocotb.start_soon(Clock(dut.clk, 10, unit="ns").start())
-    await check_aes(dut, decrypt=True, key_length=32, seed=0x256D)
+    await check_aes(dut, decrypt=True, key_length=32)
