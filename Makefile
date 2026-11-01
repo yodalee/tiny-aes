@@ -7,7 +7,7 @@ AESTOP_RTL_SOURCES := \
 	../rtl/EnableFF.sv \
 	../rtl/MuxEnableFF.sv \
 	../rtl/PosedgeDetector.sv \
-	../rtl/SboxLut.sv \
+	../rtl/SboxArish.sv \
 	../rtl/MixColumn.sv \
 	../rtl/AesState.sv \
 	../rtl/KeyExpansion.sv \
