@@ -39,7 +39,7 @@ read_verilog -sv \\
   ${compat_rtl}/MuxEnableFF.sv \\
   ${compat_rtl}/PosedgeDetector.sv \\
   ${compat_rtl}/RcLUT.sv \\
-  ${compat_rtl}/Sbox.sv \\
+  ${compat_rtl}/SboxLut.sv \\
   ${compat_rtl}/SboxArish.sv \\
   ${compat_rtl}/SboxCanright.sv \\
   ${compat_rtl}/MixColumn.sv \\
