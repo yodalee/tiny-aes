@@ -3,7 +3,6 @@ TEST ?= mixcolumn
 SYN_TOP ?= AesTop
 SYN_OUT ?= build/syn
 AESTOP_RTL_SOURCES := \
-	../rtl/Aes_pkg.sv \
 	../rtl/EnableFF.sv \
 	../rtl/MuxEnableFF.sv \
 	../rtl/PosedgeDetector.sv \

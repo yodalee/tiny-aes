@@ -26,21 +26,6 @@ script="${out_dir}/${top}.ys"
 mkdir -p "${compat_rtl}"
 cp "${rtl_dir}"/*.sv "${compat_rtl}/"
 
-# Yosys does not resolve this package import. Keep the source RTL untouched
-# and synthesize a compatibility copy with equivalent local parameters.
-awk '
-  /^import[[:space:]]+AesPkg::/ { next }
-  /^module[[:space:]]+KeyExpansion[[:space:]]*\(/ { in_header = 1 }
-  { print }
-  in_header && /^\);/ {
-    print ""
-    print "localparam logic [1:0] kLevel128 = 0;"
-    print "localparam logic [1:0] kLevel192 = 1;"
-    print "localparam logic [1:0] kLevel256 = 2;"
-    in_header = 0
-  }
-' "${rtl_dir}/KeyExpansion.sv" > "${compat_rtl}/KeyExpansion.sv"
-
 # Yosys does not parse unpacked arrays of packed structs. Lower each ControlFsm
 # microcode table into an equivalent combinational case function. The later
 # memory_map/ABC passes then map that function to ordinary logic cells.
