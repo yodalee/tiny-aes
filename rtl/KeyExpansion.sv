@@ -20,9 +20,9 @@
 //          k8  = k20 xor k24
 //          k12 = k24 xor k24
 
-import AesPkg::kLevel128;
-import AesPkg::kLevel192;
-import AesPkg::kLevel256;
+localparam kLevel128 = 2'b00;
+localparam kLevel192 = 2'b01;
+localparam kLevel256 = 2'b10;
 
 module KeyExpansion (
     input       clk,
@@ -64,7 +64,7 @@ byte rc_data;
 logic is128, is192, is256;
 assign is128 = r_level == kLevel128;
 assign is192 = r_level == kLevel192;
-assign is256 = r_level == kLevel256;
+assign is256 = r_level[1] == 1'b1;
 
 always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) c_rc_idx <= '0;
@@ -95,12 +95,6 @@ assign mux_RC = c_ke0;
 // mux 4: True if the key update need Sbox
 logic mux_Sbox;
 assign mux_Sbox = c_ke0 | c_ke1 | c_ke2;
-// mux 5: skip control for 128
-logic mux_skip128;
-assign mux_skip128 = r_level == kLevel128;
-// mux 6: skip control for 182
-logic mux_skip192;
-assign mux_skip192 = r_level == kLevel192;
 // mux12: input control
 logic [1:0] mux_input;
 assign mux_input[0] = c_ke0 | c_ke1 | c_ke2;
