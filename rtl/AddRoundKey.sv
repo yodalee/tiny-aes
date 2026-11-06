@@ -11,9 +11,6 @@
 // 2. c_keyexpansion: True if we are doing the key expansion
 
 module AddRoundKey (
-    input  logic       clk,
-    input  logic       rst_n,
-    // register
     input              r_dec,
     // control signals, prefix with c_, should be one-hot
     input              c_add,

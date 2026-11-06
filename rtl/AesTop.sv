@@ -27,7 +27,6 @@ logic c_ke0, c_ke1, c_ke2, c_kxor;
 logic [4:0] c_ikxor;
 logic [1:0] c_dec192_keysel;
 logic c_add, c_sbox, c_keyexpansion;
-byte core_data;
 
 assign c_keyexpansion = c_ke0 | c_ke1 | c_ke2;
 

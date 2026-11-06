@@ -40,7 +40,7 @@ module KeyExpansion (
     input       c_ke1,
     input       c_ke2,
     input       c_kxor,
-    // Per-bypass enable mask: [5:0] = {key74, key64, key34, key24, key14, key04}.
+    // Per-bypass enable mask: [4:0] = {key14, key24, key34, key64, key74}
     input [4:0] c_ikxor,
     input [1:0] c_dec192_keysel,
     // general input of key data, from outside or key00, 20, 60
@@ -61,10 +61,9 @@ assign en = c_en | c_kxor | (|c_ikxor);
 logic [7:0] c_rc_idx;
 byte rc_data;
 
-logic is128, is192, is256;
+logic is128, is192;
 assign is128 = r_level == kLevel128;
 assign is192 = r_level == kLevel192;
-assign is256 = r_level[1] == 1'b1;
 
 always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) c_rc_idx <= '0;

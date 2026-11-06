@@ -97,8 +97,6 @@ KeyExpansion i_key_expansion (
 byte i_sboxkey;
 assign i_sboxkey = c_ke2 ? key70 : key71;
 AddRoundKey i_add_round_key (
-    .clk(clk),
-    .rst_n(rst_n),
     .r_dec(r_dec),
     .c_add(c_add),
     .c_sbox(c_sbox),
