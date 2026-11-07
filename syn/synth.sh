@@ -31,7 +31,7 @@ cp "${rtl_dir}"/*.sv "${compat_rtl}/"
 # memory_map/ABC passes then map that function to ordinary logic cells.
 awk '
   BEGIN {
-    field_count = split("c_stateen c_srow0 c_srow1 c_srow2 c_isrow0 c_isrow1 c_mixcol c_loadkey c_keyen c_ke0 c_ke1 c_ke2 c_kxor c_add c_sbox c_ikxor c_dec192_keysel", fields, " ")
+    field_count = split("c_stateen c_mixcol c_srow c_loadkey c_keyen c_ke0 c_ke1 c_ke2 c_kxor c_add c_sbox c_ikxor c_dec192_keysel", fields, " ")
   }
   /^[[:space:]]*localparam[[:space:]]+CtrlSignals_t[[:space:]]+/ {
     in_lut = 1
@@ -100,7 +100,6 @@ fi
 
 cat > "${script}" <<YOSYS
 read_verilog -sv \\
-  ${compat_rtl}/Aes_pkg.sv \\
   ${compat_rtl}/EnableFF.sv \\
   ${compat_rtl}/MuxEnableFF.sv \\
   ${compat_rtl}/PosedgeDetector.sv \\

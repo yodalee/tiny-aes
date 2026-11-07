@@ -2,6 +2,8 @@ SIM ?= verilator
 TEST ?= mixcolumn
 SYN_TOP ?= AesTop
 SYN_OUT ?= build/syn
+SYN_SKY_OUT ?= build/sky130-hd-tt
+SKY130_PDK ?= /home/yodalee/hardware/skywater-pdk
 SV2V ?= sv2v
 OUTPUT_DIR ?= output
 AESTOP_RTL_SOURCES := \
@@ -33,7 +35,7 @@ SV2V_RTL_SOURCES := \
 	rtl/AesTop.sv
 SV2V_OUTPUTS := $(patsubst rtl/%.sv,$(OUTPUT_DIR)/%.v,$(SV2V_RTL_SOURCES))
 
-.PHONY: help output sim sim-aestop sim-mixcolumn sim-controlmixcolumn sim-controlshiftrow sim-sbox sim-sbox-arish sim-sbox-canright sim-% sim-all synth synth-sbox-area clean-sim clean-synth
+.PHONY: help output sim sim-aestop sim-mixcolumn sim-controlmixcolumn sim-controlshiftrow sim-sbox sim-sbox-arish sim-sbox-canright sim-% sim-all synth synth-sky synth-sbox-area clean-sim clean-synth
 
 help:
 	@printf 'Targets:\n'
@@ -44,6 +46,7 @@ help:
 	@printf '  make sim-all          Run all sim/sim_*.py tests\n'
 	@printf '  make output           Convert each AesTop RTL source to a separate Verilog file in $(OUTPUT_DIR)/\n'
 	@printf '  make synth            Synthesize RTL with Yosys (SYN_TOP=AesTop)\n'
+	@printf '  make synth-sky        Synthesize with SKY130 HD TT (SKY130_PDK=/path/to/pdk)\n'
 	@printf '  make synth-sbox-area  Compare Canright and Arish S-box area\n'
 	@printf '  make clean-sim        Remove simulation build outputs\n'
 	@printf '  make clean-synth      Remove synthesis build outputs\n'
@@ -93,6 +96,9 @@ clean-sim:
 
 synth:
 	bash syn/synth.sh $(SYN_TOP) $(SYN_OUT)
+
+synth-sky:
+	SKY130_PDK="$(SKY130_PDK)" bash syn/synth-sky130.sh $(SYN_TOP) $(SYN_SKY_OUT)
 
 synth-sbox-area:
 	bash syn/compare_sbox_area.sh
