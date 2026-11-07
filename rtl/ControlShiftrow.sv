@@ -8,11 +8,8 @@ module ControlShiftrow (
     input  logic r_dec,
     input  logic i_valid,
     output logic o_valid,
-    output logic c_srow0,
-    output logic c_srow1,
-    output logic c_srow2,
-    output logic c_isrow0,
-    output logic c_isrow1
+    // [2:0] = {row3, row2, row1}
+    output logic [2:0] c_srow
 );
 
 logic       i_valid_pulse;
@@ -33,34 +30,24 @@ always_ff @(posedge clk or negedge rst_n) begin
         step     <= 2'd0;
         active   <= 1'b0;
         o_valid  <= 1'b0;
-        c_srow0  <= 1'b0;
-        c_srow1  <= 1'b0;
-        c_srow2  <= 1'b0;
-        c_isrow0 <= 1'b0;
-        c_isrow1 <= 1'b0;
+        c_srow   <= 3'b000;
     end else begin
-        c_srow0  <= 1'b0;
-        c_srow1  <= 1'b0;
-        c_srow2  <= 1'b0;
-        c_isrow0 <= 1'b0;
-        c_isrow1 <= 1'b0;
+        c_srow   <= 3'b000;
         o_valid  <= 1'b0;
 
         if (i_valid_pulse) begin
             dec_q   <= r_dec;
             step    <= 2'd1;
             active  <= 1'b1;
-            c_srow0 <= 1'b1;
+            c_srow <= 3'b111;
         end else if (active) begin
             unique case (step)
                 2'd1: begin
-                    c_srow1  <= !dec_q;
-                    c_isrow0 <= dec_q;
+                    c_srow <= dec_q ? (c_srow >> 1) :(c_srow << 1);
                     step     <= 2'd2;
                 end
                 default: begin
-                    c_srow2  <= !dec_q;
-                    c_isrow1 <= dec_q;
+                    c_srow <= dec_q ? (c_srow >> 1) :(c_srow << 1);
                     o_valid  <= 1'b1;
                     step     <= 2'd0;
                     active   <= 1'b0;

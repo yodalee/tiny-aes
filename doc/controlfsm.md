@@ -52,13 +52,17 @@ and depth identical to cycles counts of the state
 
 ```
 localparam CtrlSignals_t kE128initLut [0:kE128InitCycles - 1] = '{
-    '{c_srow0: 1'b1, default: '0}
-    '{c_srow1: 1'b1, default: '0}
+    '{c_srow: 3'b111, default: '0}
+    '{c_srow: 3'b110, default: '0}
     // .....
 };
 ```
 
 By this, we can hard-coded the control signal used in that state
+
+`c_srow[2:0]` independently enables state rows 1, 2, and 3 (bits 0, 1,
+and 2). The forward ShiftRows sequence is `3'b111`, `3'b110`, `3'b100`
+(7, 6, 4); inverse ShiftRows uses `3'b111`, `3'b011`, `3'b001` (7, 3, 1).
 
 # Some difference to the paper:
 Below are some setting that is different to the paper

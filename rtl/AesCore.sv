@@ -12,11 +12,7 @@ module AesCore (
     // Control signal from the controlfsm
     /// control of aes state
     input        c_stateen,
-    input        c_srow0,
-    input        c_srow1,
-    input        c_srow2,
-    input        c_isrow0,
-    input        c_isrow1,
+    input [2:0]  c_srow,
     input        c_mixcol,
     /// control of key expansion
     input        c_loadkey,
@@ -49,11 +45,7 @@ AesState i_aes_state (
     .clk(clk),
     .rst_n(rst_n),
     .c_en(c_stateen),
-    .c_srow0(c_srow0),
-    .c_srow1(c_srow1),
-    .c_srow2(c_srow2),
-    .c_isrow0(c_isrow0),
-    .c_isrow1(c_isrow1),
+    .c_srow(c_srow),
     .c_mixcol(c_mixcol),
     .i_state(i_state),
     .o_state(state_data)

@@ -10,11 +10,7 @@ module ControlFsm (
     input  logic       o_ready,
     output logic       o_valid,
     output logic       c_stateen,
-    output logic       c_srow0,
-    output logic       c_srow1,
-    output logic       c_srow2,
-    output logic       c_isrow0,
-    output logic       c_isrow1,
+    output logic [2:0] c_srow,
     output logic       c_mixcol,
     output logic       c_loadkey,
     output logic       c_keyen,
@@ -64,7 +60,8 @@ typedef enum logic [4:0] {
 } state_e;
 
 typedef struct packed {
-    logic c_stateen, c_srow0, c_srow1, c_srow2, c_isrow0, c_isrow1, c_mixcol;
+    logic c_stateen, c_mixcol;
+    logic [2:0] c_srow;
     logic c_loadkey, c_keyen, c_ke0, c_ke1, c_ke2, c_kxor, c_add, c_sbox;
     logic [4:0] c_ikxor;
     logic [1:0] c_dec192_keysel;
@@ -92,9 +89,9 @@ localparam CtrlSignals_t kE128InitLut   [0:15] = {
     '{c_stateen: 1'b1, c_keyen: 1'b1, c_add: 1'b1, c_sbox: 1'b1, default:'0}
 };
 localparam CtrlSignals_t kE128RoundLut  [0:22] = {
-    '{c_srow0: 1'b1,  c_ke0: 1'b1, default:'0},
-    '{c_srow1: 1'b1,  c_ke1: 1'b1, default:'0},
-    '{c_srow2: 1'b1,  c_ke1: 1'b1, default:'0},
+    '{c_srow: 3'b111,  c_ke0: 1'b1, default:'0},
+    '{c_srow: 3'b110,  c_ke1: 1'b1, default:'0},
+    '{c_srow: 3'b100,  c_ke1: 1'b1, default:'0},
     '{c_mixcol: 1'b1, c_ke1: 1'b1, default:'0},
     '{c_mixcol: 1'b1, default:'0},
     '{c_mixcol: 1'b1, default:'0},
@@ -117,9 +114,9 @@ localparam CtrlSignals_t kE128RoundLut  [0:22] = {
     '{c_stateen: 1'b1, c_keyen: 1'b1, c_add: 1'b1, c_sbox: 1'b1, default:'0}
 };
 localparam CtrlSignals_t kE128FinalLut  [0:19] = {
-    '{c_srow0: 1'b1,  c_ke0: 1'b1, default:'0},
-    '{c_srow1: 1'b1,  c_ke1: 1'b1, default:'0},
-    '{c_srow2: 1'b1,  c_ke1: 1'b1, default:'0},
+    '{c_srow: 3'b111,  c_ke0: 1'b1, default:'0},
+    '{c_srow: 3'b110,  c_ke1: 1'b1, default:'0},
+    '{c_srow: 3'b100,  c_ke1: 1'b1, default:'0},
     '{                c_ke1: 1'b1, default:'0},
     '{c_stateen: 1'b1, c_kxor: 1'b1, c_add: 1'b1, default:'0},
     '{c_stateen: 1'b1, c_kxor: 1'b1, c_add: 1'b1, default:'0},
@@ -155,9 +152,9 @@ localparam CtrlSignals_t kD128InitLut   [0:19] = {
     '{c_stateen: 1'b1, c_keyen: 1'b1, c_ikxor: 5'b10011, c_add: 1'b1, default:'0},
     '{c_stateen: 1'b1, c_keyen: 1'b1, c_ikxor: 5'b10011, c_add: 1'b1, default:'0},
     '{c_stateen: 1'b1, c_keyen: 1'b1, c_ikxor: 5'b10011, c_add: 1'b1, default:'0},
-    '{c_srow0: 1'b1,   c_ke0: 1'b1, default:'0},
-    '{c_isrow0: 1'b1,  c_ke1: 1'b1, default:'0},
-    '{c_isrow1: 1'b1,  c_ke1: 1'b1, default:'0},
+    '{c_srow: 3'b111,   c_ke0: 1'b1, default:'0},
+    '{c_srow: 3'b011,  c_ke1: 1'b1, default:'0},
+    '{c_srow: 3'b001,  c_ke1: 1'b1, default:'0},
     '{                 c_ke1: 1'b1, default:'0}
 };
 localparam CtrlSignals_t kD128RoundLut  [0:30] = {
@@ -189,9 +186,9 @@ localparam CtrlSignals_t kD128RoundLut  [0:30] = {
     '{c_mixcol: 1'b1, default:'0},
     '{c_mixcol: 1'b1, default:'0},
     '{c_mixcol: 1'b1, default:'0},
-    '{c_srow0: 1'b1,  default:'0},
-    '{c_isrow0: 1'b1, default:'0},
-    '{c_isrow1: 1'b1, default:'0}
+    '{c_srow: 3'b111,  default:'0},
+    '{c_srow: 3'b011, default:'0},
+    '{c_srow: 3'b001, default:'0}
 };
 localparam CtrlSignals_t kD128FinalLut  [0:15] = {
     '{c_stateen: 1'b1, c_keyen: 1'b1, c_add: 1'b1, c_sbox: 1'b1, default:'0},
@@ -228,9 +225,9 @@ localparam CtrlSignals_t kE192InitLut   [0:22] = {
     '{c_stateen: 1'b1, c_keyen: 1'b1, c_add: 1'b1, c_sbox: 1'b1, default:'0},
     '{c_stateen: 1'b1, c_keyen: 1'b1, c_add: 1'b1, c_sbox: 1'b1, default:'0},
     '{c_stateen: 1'b1, c_keyen: 1'b1, c_add: 1'b1, c_sbox: 1'b1, default:'0},
-    '{c_srow0: 1'b1,  default:'0},
-    '{c_srow1: 1'b1,  default:'0},
-    '{c_srow2: 1'b1,  default:'0},
+    '{c_srow: 3'b111,  default:'0},
+    '{c_srow: 3'b110,  default:'0},
+    '{c_srow: 3'b100,  default:'0},
     '{c_mixcol: 1'b1, default:'0},
     '{c_mixcol: 1'b1, default:'0},
     '{c_mixcol: 1'b1, default:'0},
@@ -259,9 +256,9 @@ localparam CtrlSignals_t kE192R1Lut     [0:19] = {
     '{c_kxor: 1'b1, c_stateen: 1'b1, c_keyen: 1'b1, c_add: 1'b1, c_sbox: 1'b1, default:'0}
 };
 localparam CtrlSignals_t kE192R2Lut     [0:22] = {
-    '{c_srow0: 1'b1,  default:'0},
-    '{c_srow1: 1'b1,  default:'0},
-    '{c_srow2: 1'b1,  default:'0},
+    '{c_srow: 3'b111,  default:'0},
+    '{c_srow: 3'b110,  default:'0},
+    '{c_srow: 3'b100,  default:'0},
     '{c_mixcol: 1'b1, default:'0},
     '{c_mixcol: 1'b1, default:'0},
     '{c_mixcol: 1'b1, default:'0},
@@ -284,9 +281,9 @@ localparam CtrlSignals_t kE192R2Lut     [0:22] = {
     '{c_stateen: 1'b1, c_keyen: 1'b1, c_add: 1'b1, c_sbox: 1'b1, default:'0}
 };
 localparam CtrlSignals_t kE192R3Lut     [0:22] = {
-    '{c_srow0: 1'b1,  c_ke0: 1'b1, default:'0},
-    '{c_srow1: 1'b1,  c_ke1: 1'b1, default:'0},
-    '{c_srow2: 1'b1,  c_ke1: 1'b1, default:'0},
+    '{c_srow: 3'b111,  c_ke0: 1'b1, default:'0},
+    '{c_srow: 3'b110,  c_ke1: 1'b1, default:'0},
+    '{c_srow: 3'b100,  c_ke1: 1'b1, default:'0},
     '{c_mixcol: 1'b1, c_ke1: 1'b1, default:'0},
     '{c_mixcol: 1'b1, default:'0},
     '{c_mixcol: 1'b1, default:'0},
@@ -309,9 +306,9 @@ localparam CtrlSignals_t kE192R3Lut     [0:22] = {
     '{c_kxor: 1'b1, c_stateen: 1'b1, c_keyen: 1'b1, c_add: 1'b1, c_sbox: 1'b1, default:'0}
 };
 localparam CtrlSignals_t kE192R4Lut     [0:26] = {
-    '{c_srow0: 1'b1,  default:'0},
-    '{c_srow1: 1'b1,  default:'0},
-    '{c_srow2: 1'b1,  default:'0},
+    '{c_srow: 3'b111,  default:'0},
+    '{c_srow: 3'b110,  default:'0},
+    '{c_srow: 3'b100,  default:'0},
     '{c_mixcol: 1'b1, default:'0},
     '{c_mixcol: 1'b1, default:'0},
     '{c_mixcol: 1'b1, default:'0},
@@ -338,9 +335,9 @@ localparam CtrlSignals_t kE192R4Lut     [0:26] = {
     '{c_kxor: 1'b1, c_stateen: 1'b1, c_keyen: 1'b1, c_add: 1'b1, c_sbox: 1'b1, default:'0}
 };
 localparam CtrlSignals_t kE192FinalLut  [0:19] = {
-    '{c_srow0: 1'b1,  c_ke0: 1'b1, default:'0},
-    '{c_srow1: 1'b1,  c_ke1: 1'b1, default:'0},
-    '{c_srow2: 1'b1,  c_ke1: 1'b1, default:'0},
+    '{c_srow: 3'b111,  c_ke0: 1'b1, default:'0},
+    '{c_srow: 3'b110,  c_ke1: 1'b1, default:'0},
+    '{c_srow: 3'b100,  c_ke1: 1'b1, default:'0},
     '{                c_ke1: 1'b1, default:'0},
     '{c_stateen: 1'b1, c_kxor: 1'b1, c_add: 1'b1, default:'0},
     '{c_stateen: 1'b1, c_kxor: 1'b1, c_add: 1'b1, default:'0},
@@ -384,9 +381,9 @@ localparam CtrlSignals_t kD192InitLut   [0:26] = {
     '{c_stateen: 1'b1, c_keyen: 1'b1, c_ikxor: 5'b00111, c_add: 1'b1, default:'0},
     '{c_stateen: 1'b1, c_keyen: 1'b1, c_ikxor: 5'b00111, c_add: 1'b1, default:'0},
     '{c_stateen: 1'b1, c_keyen: 1'b1, c_ikxor: 5'b00111, c_add: 1'b1, default:'0},
-    '{c_srow0:  1'b1, default:'0},
-    '{c_isrow0: 1'b1, default:'0},
-    '{c_isrow1: 1'b1, default:'0}
+    '{c_srow: 3'b111, default:'0},
+    '{c_srow: 3'b011, default:'0},
+    '{c_srow: 3'b001, default:'0}
 };
 localparam CtrlSignals_t kD192R1Lut     [0:34] = {
     '{c_dec192_keysel: 2'b1, c_stateen: 1'b1, c_keyen: 1'b1, c_add: 1'b1, c_sbox: 1'b1, default:'0},
@@ -421,9 +418,9 @@ localparam CtrlSignals_t kD192R1Lut     [0:34] = {
     '{c_mixcol: 1'b1, default:'0},
     '{c_mixcol: 1'b1, default:'0},
     '{c_mixcol: 1'b1, default:'0},
-    '{c_srow0:  1'b1,  default:'0},
-    '{c_isrow0: 1'b1, default:'0},
-    '{c_isrow1: 1'b1, default:'0}
+    '{c_srow: 3'b111,  default:'0},
+    '{c_srow: 3'b011, default:'0},
+    '{c_srow: 3'b001, default:'0}
 };
 localparam CtrlSignals_t kD192R2Lut     [0:30] = {
     '{c_dec192_keysel: 2'b10, c_stateen: 1'b1, c_keyen: 1'b1, c_add: 1'b1, c_sbox: 1'b1, default:'0},
@@ -454,9 +451,9 @@ localparam CtrlSignals_t kD192R2Lut     [0:30] = {
     '{c_mixcol: 1'b1, default:'0},
     '{c_mixcol: 1'b1, default:'0},
     '{c_mixcol: 1'b1, default:'0},
-    '{c_srow0:  1'b1, default:'0},
-    '{c_isrow0: 1'b1, default:'0},
-    '{c_isrow1: 1'b1, default:'0}
+    '{c_srow: 3'b111, default:'0},
+    '{c_srow: 3'b011, default:'0},
+    '{c_srow: 3'b001, default:'0}
 };
 localparam CtrlSignals_t kD192R3Lut     [0:30] = {
     '{c_stateen: 1'b1, c_keyen: 1'b1, c_ikxor: 5'b00110, c_add: 1'b1, c_sbox: 1'b1, default:'0},
@@ -487,9 +484,9 @@ localparam CtrlSignals_t kD192R3Lut     [0:30] = {
     '{c_mixcol: 1'b1, default:'0},
     '{c_mixcol: 1'b1, default:'0},
     '{c_mixcol: 1'b1, default:'0},
-    '{c_srow0:  1'b1,  default:'0},
-    '{c_isrow0: 1'b1, default:'0},
-    '{c_isrow1: 1'b1, default:'0}
+    '{c_srow: 3'b111,  default:'0},
+    '{c_srow: 3'b011, default:'0},
+    '{c_srow: 3'b001, default:'0}
 };
 localparam CtrlSignals_t kD192FinalLut  [0:15] = {
     '{c_stateen: 1'b1, c_keyen: 1'b1, c_add: 1'b1, c_sbox: 1'b1, default:'0},
@@ -564,9 +561,9 @@ localparam CtrlSignals_t kE256InitLut   [0:51] = {
     '{c_keyen: 1'b1, default:'0}
 };
 localparam CtrlSignals_t kE256R1Lut     [0:22] = {
-    '{c_srow0: 1'b1,  default:'0},
-    '{c_srow1: 1'b1,  default:'0},
-    '{c_srow2: 1'b1,  default:'0},
+    '{c_srow: 3'b111,  default:'0},
+    '{c_srow: 3'b110,  default:'0},
+    '{c_srow: 3'b100,  default:'0},
     '{c_mixcol: 1'b1, default:'0},
     '{c_mixcol: 1'b1, default:'0},
     '{c_mixcol: 1'b1, default:'0},
@@ -589,9 +586,9 @@ localparam CtrlSignals_t kE256R1Lut     [0:22] = {
     '{c_stateen: 1'b1, c_keyen: 1'b1, c_add: 1'b1, c_sbox: 1'b1, default:'0}
 };
 localparam CtrlSignals_t kE256R3Lut     [0:22] = {
-    '{c_srow0: 1'b1,  c_ke2: 1'b1, default:'0},
-    '{c_srow1: 1'b1,  c_ke2: 1'b1, default:'0},
-    '{c_srow2: 1'b1,  c_ke2: 1'b1, default:'0},
+    '{c_srow: 3'b111,  c_ke2: 1'b1, default:'0},
+    '{c_srow: 3'b110,  c_ke2: 1'b1, default:'0},
+    '{c_srow: 3'b100,  c_ke2: 1'b1, default:'0},
     '{c_mixcol: 1'b1, c_ke2: 1'b1, default:'0},
     '{c_mixcol: 1'b1, default:'0},
     '{c_mixcol: 1'b1, default:'0},
@@ -614,9 +611,9 @@ localparam CtrlSignals_t kE256R3Lut     [0:22] = {
     '{c_stateen: 1'b1, c_keyen: 1'b1, c_add: 1'b1, c_sbox: 1'b1, default:'0}
 };
 localparam CtrlSignals_t kE256R4Lut     [0:22] = {
-    '{c_srow0: 1'b1,  c_ke0: 1'b1, default:'0},
-    '{c_srow1: 1'b1,  c_ke1: 1'b1, default:'0},
-    '{c_srow2: 1'b1,  c_ke1: 1'b1, default:'0},
+    '{c_srow: 3'b111,  c_ke0: 1'b1, default:'0},
+    '{c_srow: 3'b110,  c_ke1: 1'b1, default:'0},
+    '{c_srow: 3'b100,  c_ke1: 1'b1, default:'0},
     '{c_mixcol: 1'b1, c_ke1: 1'b1, default:'0},
     '{c_mixcol: 1'b1, default:'0},
     '{c_mixcol: 1'b1, default:'0},
@@ -639,9 +636,9 @@ localparam CtrlSignals_t kE256R4Lut     [0:22] = {
     '{c_stateen: 1'b1, c_keyen: 1'b1, c_add: 1'b1, c_sbox: 1'b1, default:'0}
 };
 localparam CtrlSignals_t kE256FinalLut  [0:19] = {
-    '{c_srow0: 1'b1,  c_ke0: 1'b1, default:'0},
-    '{c_srow1: 1'b1,  c_ke1: 1'b1, default:'0},
-    '{c_srow2: 1'b1,  c_ke1: 1'b1, default:'0},
+    '{c_srow: 3'b111,  c_ke0: 1'b1, default:'0},
+    '{c_srow: 3'b110,  c_ke1: 1'b1, default:'0},
+    '{c_srow: 3'b100,  c_ke1: 1'b1, default:'0},
     '{                c_ke1: 1'b1, default:'0},
     '{c_stateen: 1'b1, c_kxor: 1'b1, c_add: 1'b1, default:'0},
     '{c_stateen: 1'b1, c_kxor: 1'b1, c_add: 1'b1, default:'0},
@@ -693,9 +690,9 @@ localparam CtrlSignals_t kD256InitLut   [0:34] = {
     '{c_stateen: 1'b1, c_keyen: 1'b1, c_add: 1'b1, default:'0},
     '{c_stateen: 1'b1, c_keyen: 1'b1, c_add: 1'b1, default:'0},
     '{c_stateen: 1'b1, c_keyen: 1'b1, c_add: 1'b1, default:'0},
-    '{c_srow0:  1'b1,  default:'0},
-    '{c_isrow0: 1'b1, default:'0},
-    '{c_isrow1: 1'b1, default:'0}
+    '{c_srow: 3'b111,  default:'0},
+    '{c_srow: 3'b011, default:'0},
+    '{c_srow: 3'b001, default:'0}
 };
 localparam CtrlSignals_t kD256R1Lut     [0:30] = {
     '{c_stateen: 1'b1, c_keyen: 1'b1, c_add: 1'b1, c_sbox: 1'b1, default:'0},
@@ -726,9 +723,9 @@ localparam CtrlSignals_t kD256R1Lut     [0:30] = {
     '{c_mixcol: 1'b1, default:'0},
     '{c_mixcol: 1'b1, default:'0},
     '{c_mixcol: 1'b1, default:'0},
-    '{c_srow0:  1'b1, default:'0},
-    '{c_isrow0: 1'b1, default:'0},
-    '{c_isrow1: 1'b1, default:'0}
+    '{c_srow: 3'b111, default:'0},
+    '{c_srow: 3'b011, default:'0},
+    '{c_srow: 3'b001, default:'0}
 };
 localparam CtrlSignals_t kD256R2Lut     [0:30] = {
     '{c_stateen: 1'b1, c_keyen: 1'b1, c_add: 1'b1, c_sbox: 1'b1, default:'0},
@@ -759,9 +756,9 @@ localparam CtrlSignals_t kD256R2Lut     [0:30] = {
     '{c_mixcol: 1'b1, default:'0},
     '{c_mixcol: 1'b1, default:'0},
     '{c_mixcol: 1'b1, default:'0},
-    '{c_srow0:  1'b1, default:'0},
-    '{c_isrow0: 1'b1, default:'0},
-    '{c_isrow1: 1'b1, default:'0}
+    '{c_srow: 3'b111, default:'0},
+    '{c_srow: 3'b011, default:'0},
+    '{c_srow: 3'b001, default:'0}
 };
 localparam CtrlSignals_t kD256FinalLut  [0:15] = {
     '{c_stateen: 1'b1, c_keyen: 1'b1, c_add: 1'b1, c_sbox: 1'b1, default:'0},
@@ -939,11 +936,7 @@ assign o_valid = state == kOutput;
 
 // control signal
 assign c_stateen       = ctrl.c_stateen;
-assign c_srow0         = ctrl.c_srow0;
-assign c_srow1         = ctrl.c_srow1;
-assign c_srow2         = ctrl.c_srow2;
-assign c_isrow0        = ctrl.c_isrow0;
-assign c_isrow1        = ctrl.c_isrow1;
+assign c_srow          = ctrl.c_srow;
 assign c_mixcol        = ctrl.c_mixcol;
 assign c_loadkey       = ctrl.c_loadkey;
 assign c_keyen         = ctrl.c_keyen;

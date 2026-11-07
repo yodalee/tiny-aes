@@ -9,20 +9,14 @@ async def reset(dut):
     dut.i_valid.value = 0
     await RisingEdge(dut.clk)
     await ReadOnly()
-    assert controls(dut) == (0, 0, 0, 0, 0)
+    assert controls(dut) == 0
     assert dut.o_valid.value == 0
     await Timer(1, unit="ns")
     dut.rst_n.value = 1
 
 
 def controls(dut):
-    return (
-        int(dut.c_srow0.value),
-        int(dut.c_srow1.value),
-        int(dut.c_srow2.value),
-        int(dut.c_isrow0.value),
-        int(dut.c_isrow1.value),
-    )
+    return int(dut.c_srow.value)
 
 
 async def trigger(dut, r_dec):
@@ -49,10 +43,10 @@ async def test_encrypt_generates_shiftrow_sequence(dut):
 
     await trigger(dut, r_dec=0)
     assert await observe_controls(dut, 4) == [
-        ((1, 0, 0, 0, 0), 0),
-        ((0, 1, 0, 0, 0), 0),
-        ((0, 0, 1, 0, 0), 1),
-        ((0, 0, 0, 0, 0), 0),
+        (7, 0),
+        (6, 0),
+        (4, 1),
+        (0, 0),
     ]
 
 
@@ -63,10 +57,10 @@ async def test_decrypt_generates_inverse_shiftrow_sequence(dut):
 
     await trigger(dut, r_dec=1)
     assert await observe_controls(dut, 4) == [
-        ((1, 0, 0, 0, 0), 0),
-        ((0, 0, 0, 1, 0), 0),
-        ((0, 0, 0, 0, 1), 1),
-        ((0, 0, 0, 0, 0), 0),
+        (7, 0),
+        (3, 0),
+        (1, 1),
+        (0, 0),
     ]
 
 
@@ -77,10 +71,10 @@ async def test_held_valid_does_not_restart_shiftrow_sequence(dut):
 
     dut.i_valid.value = 1
     assert await observe_controls(dut, 6) == [
-        ((0, 0, 0, 0, 0), 0),
-        ((1, 0, 0, 0, 0), 0),
-        ((0, 1, 0, 0, 0), 0),
-        ((0, 0, 1, 0, 0), 1),
-        ((0, 0, 0, 0, 0), 0),
-        ((0, 0, 0, 0, 0), 0),
+        (0, 0),
+        (7, 0),
+        (6, 0),
+        (4, 1),
+        (0, 0),
+        (0, 0),
     ]

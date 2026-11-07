@@ -6,23 +6,16 @@
 // storage can support load, output, ShiftRows, InvShiftRows, and MixColumns.
 // The output byte is always state00.
 //
-// There are 6 main control operations:
+// There are 3 main control operations:
 // 1. c_en:
 //    Global byte shift enable. When no row/mix operation is selected, each
 //    enabled register shifts through the serial state path and i_state enters
 //    at state33.
-// 2. c_srow0:
-//    First ShiftRows step. Rotates rows 1, 2, and 3 left by one byte.
-// 3. c_srow1:
-//    Second ShiftRows step. Rotates rows 2 and 3 left by one byte.
-// 4. c_srow2:
-//    Third ShiftRows step. Rotates row 3 left by one byte.
-// 5. c_isrow0
-//    InvShiftRows steps. Rotates rows rows 1.
-// 6. c_isrow1:
-//    InvShiftRows steps. Rotates rows rows 1 and 2.
-//    A inverse shift row can be doen by c_srow0, c_isrow0 and c_isrow1
-// 6. c_mixcol:
+// 2. c_srow[2:0]:
+//    Per-row ShiftRows enable, where bit 0 enables row 1, bit 1 enables
+//    row 2, and bit 2 enables row 3.  The forward sequence is 7, 6, 4;
+//    the inverse sequence is 7, 3, 1.
+// 3. c_mixcol:
 //    Mixes the current first column, feeds the result through the phantom
 //    state4x wires, and shifts the mixed column back into the matrix.
 //    Forward MixColumn is c_mixcol by 4 cycles.
@@ -37,17 +30,8 @@ module AesState (
     input       rst_n,
     // Global state shift enable
     input       c_en,
-    // Row/mix controls below are one-hot
-    // Rotate rows 1,2,3 left
-    input       c_srow0,
-    // Rotate rows 2,3 left
-    input       c_srow1,
-    // Rotate rows 3 left
-    input       c_srow2,
-    // Rotate rows 1 left
-    input       c_isrow0,
-    // Rotate rows 1,2 left
-    input       c_isrow1,
+    // Per-row ShiftRows enables: [2:0] = {row3, row2, row1}
+    input [2:0] c_srow,
     // mix column for 1 cycle
     input       c_mixcol,
     // input and output byte
@@ -65,13 +49,13 @@ byte state40, state41, state42, state43;
 // Per-row enables. Row operations only enable the rows that need to move.
 logic enrow0, enrow1, enrow2, enrow3;
 assign enrow0 = c_en | c_mixcol;
-assign enrow1 = c_en | c_mixcol | c_srow0 | c_isrow0 | c_isrow1;
-assign enrow2 = c_en | c_mixcol | c_srow0 | c_srow1  | c_isrow1;
-assign enrow3 = c_en | c_mixcol | c_srow0 | c_srow1  | c_srow2 ;
+assign enrow1 = c_en | c_mixcol | c_srow[0];
+assign enrow2 = c_en | c_mixcol | c_srow[1];
+assign enrow3 = c_en | c_mixcol | c_srow[2];
 
 // Selects serial shift input or row/mix feedback input for the state flops.
 logic sel_row;
-assign sel_row = c_srow0 | c_srow1 | c_srow2 | c_isrow0 | c_isrow1 | c_mixcol;
+assign sel_row = |c_srow | c_mixcol;
 
 // column 0
 MuxEnableFF i_state00 (
