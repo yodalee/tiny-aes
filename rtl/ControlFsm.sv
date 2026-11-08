@@ -167,7 +167,7 @@ always_comb begin
         kE192R1: begin
             if (cycle_q<8) begin p_data=1; p_sbox=1; p_keyshift=1; end
             else if (cycle_q==8) p_ke0=1; else if (cycle_q<=11) p_ke1=1;
-            else begin p_data=1; p_sbox=1; p_kxor=1; end
+            else begin p_data=1; p_sbox=1; p_keyshift=1; p_kxor=1; end
         end
         kE192R2: begin
             p_srow_start=(cycle_q==0); p_mix_start=(cycle_q==3);
@@ -178,14 +178,15 @@ always_comb begin
             p_srow_start=(cycle_q==0); p_mix_start=(cycle_q==3);
             if (cycle_q==0) p_ke0=1;
             else if (cycle_q<=3) p_ke1=1;
-            else begin p_data=1; p_sbox=1; p_kxor=1; end
+            else if (cycle_q>=7) begin p_data=1; p_sbox=1; p_keyshift=1; p_kxor=1; end
         end
         kE192R4: begin
             p_srow_start=(cycle_q==0); p_mix_start=(cycle_q==3);
             if (cycle_q>=7 && cycle_q<=10) begin p_data=1; p_sbox=1; p_kxor=1; end
             else if (cycle_q>=11 && cycle_q<=14) begin p_data=1; p_sbox=1; p_keyshift=1; end
-            else if (cycle_q==15) p_ke0=1; else if (cycle_q<=18) p_ke1=1;
-            else begin p_data=1; p_sbox=1; p_kxor=1; end
+            else if (cycle_q==15) p_ke0=1;
+            else if (cycle_q>=16 && cycle_q<=18) p_ke1=1;
+            else if (cycle_q>=19) begin p_data=1; p_sbox=1; p_keyshift=1; p_kxor=1; end
         end
         kD192Init: begin
             if (cycle_q<8) p_keyshift=1;
