@@ -821,35 +821,54 @@ endfunction
 
 /* verilator lint_off WIDTHTRUNC */
 function automatic CtrlSignals_t lut(input state_e s, input logic [5:0] i);
+    CtrlSignals_t e128_init, e128_round, e128_final;
+    CtrlSignals_t d128_init, d128_round, d128_final;
+    CtrlSignals_t e192_init, e192_r1, e192_r2, e192_r3, e192_r4, e192_final;
+    CtrlSignals_t d192_init, d192_r1, d192_r2, d192_r3, d192_final;
+    CtrlSignals_t e256_init, e256_r1, e256_r3, e256_r4, e256_final;
+    CtrlSignals_t d256_init, d256_r1, d256_r2, d256_final;
     begin
+        // Evaluate every table before selecting one.  This also keeps the
+        // synthesis compatibility lowering from making conditionally-called
+        // function results into latches.
+        e128_init = kE128InitLut[i];   e128_round = kE128RoundLut[i]; e128_final = kE128FinalLut[i];
+        d128_init = kD128InitLut[i];   d128_round = kD128RoundLut[i]; d128_final = kD128FinalLut[i];
+        e192_init = kE192InitLut[i];   e192_r1 = kE192R1Lut[i];       e192_r2 = kE192R2Lut[i];
+        e192_r3 = kE192R3Lut[i];       e192_r4 = kE192R4Lut[i];       e192_final = kE192FinalLut[i];
+        d192_init = kD192InitLut[i];   d192_r1 = kD192R1Lut[i];       d192_r2 = kD192R2Lut[i];
+        d192_r3 = kD192R3Lut[i];       d192_final = kD192FinalLut[i];
+        e256_init = kE256InitLut[i];   e256_r1 = kE256R1Lut[i];       e256_r3 = kE256R3Lut[i];
+        e256_r4 = kE256R4Lut[i];       e256_final = kE256FinalLut[i];
+        d256_init = kD256InitLut[i];   d256_r1 = kD256R1Lut[i];       d256_r2 = kD256R2Lut[i];
+        d256_final = kD256FinalLut[i];
         lut = '0;
         case (s)
-            kE128Init: lut = kE128InitLut[i];
-            kE128Round: lut = kE128RoundLut[i];
-            kE128Final: lut = kE128FinalLut[i];
-            kD128Init: lut = kD128InitLut[i];
-            kD128Round: lut = kD128RoundLut[i];
-            kD128Final: lut = kD128FinalLut[i];
-            kE192Init: lut = kE192InitLut[i];
-            kE192Round1: lut = kE192R1Lut[i];
-            kE192Round2: lut = kE192R2Lut[i];
-            kE192Round3: lut = kE192R3Lut[i];
-            kE192Round4: lut = kE192R4Lut[i];
-            kE192Final: lut = kE192FinalLut[i];
-            kD192Init: lut = kD192InitLut[i];
-            kD192Round1: lut = kD192R1Lut[i];
-            kD192Round2: lut = kD192R2Lut[i];
-            kD192Round3: lut = kD192R3Lut[i];
-            kD192Final: lut = kD192FinalLut[i];
-            kE256Init: lut = kE256InitLut[i];
-            kE256Round1: lut = kE256R1Lut[i];
-            kE256Round3: lut = kE256R3Lut[i];
-            kE256Round4: lut = kE256R4Lut[i];
-            kE256Final: lut = kE256FinalLut[i];
-            kD256Init: lut = kD256InitLut[i];
-            kD256Round1: lut = kD256R1Lut[i];
-            kD256Round2: lut = kD256R2Lut[i];
-            kD256Final: lut = kD256FinalLut[i];
+            kE128Init: lut = e128_init;
+            kE128Round: lut = e128_round;
+            kE128Final: lut = e128_final;
+            kD128Init: lut = d128_init;
+            kD128Round: lut = d128_round;
+            kD128Final: lut = d128_final;
+            kE192Init: lut = e192_init;
+            kE192Round1: lut = e192_r1;
+            kE192Round2: lut = e192_r2;
+            kE192Round3: lut = e192_r3;
+            kE192Round4: lut = e192_r4;
+            kE192Final: lut = e192_final;
+            kD192Init: lut = d192_init;
+            kD192Round1: lut = d192_r1;
+            kD192Round2: lut = d192_r2;
+            kD192Round3: lut = d192_r3;
+            kD192Final: lut = d192_final;
+            kE256Init: lut = e256_init;
+            kE256Round1: lut = e256_r1;
+            kE256Round3: lut = e256_r3;
+            kE256Round4: lut = e256_r4;
+            kE256Final: lut = e256_final;
+            kD256Init: lut = d256_init;
+            kD256Round1: lut = d256_r1;
+            kD256Round2: lut = d256_r2;
+            kD256Final: lut = d256_final;
             default: ;
         endcase
     end
