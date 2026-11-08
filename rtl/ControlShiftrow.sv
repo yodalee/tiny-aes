@@ -25,10 +25,12 @@ assign done = (step == 2'd2);
 // parent issue start at the beginning of a phase without paying a bubble.
 always_comb begin
     c_srow = 3'b000;
-    if (start && !busy)
-        c_srow = 3'b111;
-    else if (busy)
-        c_srow = dec_q ? (3'b111 >> step) : (3'b111 << step);
+    case (step)
+        2'd0: if (start) c_srow = 3'b111;
+        2'd1: c_srow = dec_q ? 3'b011 : 3'b110;
+        2'd2: c_srow = dec_q ? 3'b001 : 3'b100;
+        default: ;
+    endcase
 end
 
 always_ff @(posedge clk or negedge rst_n) begin
