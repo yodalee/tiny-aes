@@ -4,19 +4,21 @@
 // The module that instantiates the submodule and connect them together
 
 module AesTop (
-    input clk,
-    input rst_n,
+    input              clk,
+    input              rst_n,
     // CSR
-    input        r_dec,
-    input [1:0]  r_level,
+    input              r_dec,
+    input [1:0]        r_level,
     /// Data input
-    input        i_valid,
-    output logic i_ready,
-    input byte   i_data,
+    input              i_valid,
+    output logic       i_ready,
+    input byte         i_data,
     // Data output
-    output logic o_valid,
-    input        o_ready,
-    output byte  o_data
+    output logic       o_valid,
+    input              o_ready,
+    output byte        o_data,
+    // debug
+    output logic [4:0] d_state
 );
 
 logic c_stateen;
@@ -39,6 +41,7 @@ ControlFsm i_control_fsm (
     .i_ready(i_ready),
     .o_ready(o_ready),
     .o_valid(o_valid),
+    .d_state(d_state),
     .c_srow(c_srow),
     .c_mixcol(c_mixcol),
     .c_stateen(c_stateen),

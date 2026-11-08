@@ -5,10 +5,13 @@ module ControlFsm (
     input  logic       rst_n,
     input  logic       r_dec,
     input  logic [1:0] r_level,
+    // input/output signal
     input  logic       i_valid,
     output logic       i_ready,
     input  logic       o_ready,
     output logic       o_valid,
+    output logic [4:0] d_state,
+    // control signal
     output logic       c_stateen,
     output logic [2:0] c_srow,
     output logic       c_mixcol,
@@ -18,7 +21,7 @@ module ControlFsm (
     output logic       c_ke1,
     output logic       c_ke2,
     output logic       c_kxor,
-    // Per-bypass enable mask: [5:0] = {key74, key64, key34, key24, key14, key04}.
+    // Per-bypass enable mask: [4:0] = {key14, key24, key34, key64, key74}
     output logic [4:0] c_ikxor,
     // special control for decryption 192
     // [key20, key60]
@@ -933,6 +936,7 @@ end
 
 assign i_ready = state == kLoadData || state == kLoadKey;
 assign o_valid = state == kOutput;
+assign d_state = state;
 
 // control signal
 assign c_stateen       = ctrl.c_stateen;
