@@ -121,7 +121,7 @@ read_verilog -sv \\
 # elaborated module. The generated ControlFsm case functions below are
 # combinational logic, so the microcode LUTs are included in this mapping.
 hierarchy -top ${top}
-synth -top ${top} -hieropt
+synth -top ${top}
 tee -o ${module_report} stat ${stat_options} -top ${top}
 tee -o ${module_json} stat -json ${stat_options} -top ${top}
 design -save mapped_hier
