@@ -35,7 +35,7 @@ SV2V_RTL_SOURCES := \
 	rtl/AesTop.sv
 SV2V_OUTPUTS := $(patsubst rtl/%.sv,$(OUTPUT_DIR)/%.v,$(SV2V_RTL_SOURCES))
 
-.PHONY: help output sim sim-aestop sim-mixcolumn sim-controlmixcolumn sim-controlshiftrow sim-sbox sim-sbox-arish sim-sbox-canright sim-% sim-all synth synth-sky synth-sbox-area clean-sim clean-synth
+.PHONY: help output sim sim-aestop sim-mixcolumn sim-controlmixcolumn sim-controlshiftrow sim-controlkeyexpand sim-sbox sim-sbox-arish sim-sbox-canright sim-% sim-all synth synth-sky synth-sbox-area clean-sim clean-synth
 
 help:
 	@printf 'Targets:\n'
@@ -61,6 +61,9 @@ sim-controlmixcolumn:
 
 sim-controlshiftrow:
 	$(MAKE) -C sim SIM=$(SIM) RTL_SOURCES='../rtl/PosedgeDetector.sv ../rtl/ControlShiftrow.sv' TOPLEVEL=ControlShiftrow COCOTB_TEST_MODULES=sim_controlshiftrow
+
+sim-controlkeyexpand:
+	$(MAKE) -C sim SIM=$(SIM) RTL_SOURCES=../rtl/ControlKeyExpand.sv TOPLEVEL=ControlKeyExpand COCOTB_TEST_MODULES=sim_controlkeyexpand
 
 sim-sboxlut:
 	$(MAKE) -C sim SIM=$(SIM) RTL_SOURCES=../rtl/SboxLut.sv TOPLEVEL=SboxLut COCOTB_TEST_MODULES=sim_sbox
