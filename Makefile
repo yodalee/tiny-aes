@@ -9,7 +9,6 @@ OUTPUT_DIR ?= output
 AESTOP_RTL_SOURCES := \
 	../rtl/EnableFF.sv \
 	../rtl/MuxEnableFF.sv \
-	../rtl/PosedgeDetector.sv \
 	../rtl/SboxArish.sv \
 	../rtl/MixColumn.sv \
 	../rtl/AesState.sv \
@@ -35,7 +34,15 @@ SV2V_RTL_SOURCES := \
 	rtl/AesTop.sv
 SV2V_OUTPUTS := $(patsubst rtl/%.sv,$(OUTPUT_DIR)/%.v,$(SV2V_RTL_SOURCES))
 
-.PHONY: help output sim sim-aestop sim-mixcolumn sim-controladd sim-controlmixcolumn sim-controlshiftrow sim-controlkeyexpand sim-sbox sim-sbox-arish sim-sbox-canright sim-% sim-all synth synth-sky synth-sbox-area clean-sim clean-synth
+.PHONY: help output
+.PHONY: sim sim-all
+.PHONY: sim-aestop sim-mixcolumn sim-controladd sim-controlmixcolumn
+.PHONY: sim-controlshiftrow sim-controlkeyexpand sim-sbox sim-sboxlut
+.PHONY: sim-sboxarish sim-sboxcanright
+.PHONY: synth synth-sky synth-sbox-area clean-sim clean-synth
+.PHONY: FORCE
+
+FORCE:
 
 help:
 	@printf 'Targets:\n'
@@ -57,10 +64,10 @@ sim-mixcolumn:
 	$(MAKE) -C sim SIM=$(SIM) RTL_SOURCES=../rtl/MixColumn.sv TOPLEVEL=MixColumn COCOTB_TEST_MODULES=sim_mixcolumn
 
 sim-controlmixcolumn:
-	$(MAKE) -C sim SIM=$(SIM) RTL_SOURCES='../rtl/PosedgeDetector.sv ../rtl/ControlMixColumn.sv' TOPLEVEL=ControlMixColumn COCOTB_TEST_MODULES=sim_controlmixcolumn
+	$(MAKE) -C sim SIM=$(SIM) RTL_SOURCES=../rtl/ControlMixColumn.sv TOPLEVEL=ControlMixColumn COCOTB_TEST_MODULES=sim_controlmixcolumn
 
 sim-controlshiftrow:
-	$(MAKE) -C sim SIM=$(SIM) RTL_SOURCES='../rtl/PosedgeDetector.sv ../rtl/ControlShiftrow.sv' TOPLEVEL=ControlShiftrow COCOTB_TEST_MODULES=sim_controlshiftrow
+	$(MAKE) -C sim SIM=$(SIM) RTL_SOURCES=../rtl/ControlShiftrow.sv TOPLEVEL=ControlShiftrow COCOTB_TEST_MODULES=sim_controlshiftrow
 
 sim-controlkeyexpand:
 	$(MAKE) -C sim SIM=$(SIM) RTL_SOURCES=../rtl/ControlKeyExpand.sv TOPLEVEL=ControlKeyExpand COCOTB_TEST_MODULES=sim_controlkeyexpand
@@ -77,7 +84,7 @@ sim-sboxarish:
 sim-sboxcanright:
 	$(MAKE) -C sim SIM=$(SIM) RTL_SOURCES=../rtl/SboxCanright.sv TOPLEVEL=SboxCanright COCOTB_TEST_MODULES=sim_sboxcanright
 
-sim-%:
+sim-%: FORCE
 	$(MAKE) -C sim SIM=$(SIM) RTL_SOURCES='$(RTL_SOURCES)' TOPLEVEL='$(TOPLEVEL)' COCOTB_TEST_MODULES=sim_$*
 
 sim-aestop:
