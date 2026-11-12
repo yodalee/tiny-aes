@@ -53,8 +53,8 @@ help:
 	@printf '  make sim-all          Run all sim/sim_*.py tests\n'
 	@printf '  make sim-aestop-synth Run AesTop tests against the synthesized netlist with Icarus\n'
 	@printf '  make output           Convert each AesTop RTL source to a separate Verilog file in $(OUTPUT_DIR)/\n'
-	@printf '  make synth            Synthesize RTL with Yosys (SYN_TOP=AesTop)\n'
-	@printf '  make synth-sky        Synthesize with SKY130 HD TT (SKY130_PDK=/path/to/pdk)\n'
+	@printf '  make synth            Synthesize generated Verilog with Yosys (SYN_TOP=AesTop)\n'
+	@printf '  make synth-sky        Synthesize generated Verilog with SKY130 HD TT (SKY130_PDK=/path/to/pdk)\n'
 	@printf '  make synth-sbox-area  Compare Canright and Arish S-box area\n'
 	@printf '  make clean-sim        Remove simulation build outputs\n'
 	@printf '  make clean-synth      Remove synthesis build outputs\n'
@@ -111,11 +111,11 @@ $(OUTPUT_DIR)/%.v: rtl/%.sv
 clean-sim:
 	$(MAKE) -C sim clean
 
-synth:
-	bash syn/synth.sh $(SYN_TOP) $(SYN_OUT)
+synth: $(SV2V_OUTPUTS)
+	bash syn/synth.sh $(SYN_TOP) $(SYN_OUT) $(SV2V_OUTPUTS)
 
-synth-sky:
-	SKY130_PDK="$(SKY130_PDK)" bash syn/synth-sky130.sh $(SYN_TOP) $(SYN_SKY_OUT)
+synth-sky: $(SV2V_OUTPUTS)
+	SKY130_PDK="$(SKY130_PDK)" bash syn/synth-sky130.sh $(SYN_TOP) $(SYN_SKY_OUT) $(SV2V_OUTPUTS)
 
 synth-sbox-area:
 	bash syn/compare_sbox_area.sh

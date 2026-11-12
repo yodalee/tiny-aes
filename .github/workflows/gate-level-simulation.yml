@@ -24,6 +24,15 @@ jobs:
           sudo apt-get update
           sudo apt-get install --yes iverilog yosys
 
+      - name: Install sv2v
+        run: |
+          curl --fail --location --silent --show-error \
+            https://github.com/zachjs/sv2v/releases/download/v0.0.13/sv2v-Linux.zip \
+            --output "$RUNNER_TEMP/sv2v.zip"
+          unzip -q "$RUNNER_TEMP/sv2v.zip" -d "$RUNNER_TEMP/sv2v"
+          sudo install -m 755 "$RUNNER_TEMP/sv2v/sv2v-Linux/sv2v" /usr/local/bin/sv2v
+          sv2v --version
+
       - name: Install Python dependencies
         run: python -m pip install --requirement requirements.txt
 
