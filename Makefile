@@ -49,7 +49,7 @@ help:
 	@printf '  make sim              Run the default simulation (mixcolumn)\n'
 	@printf '  make sim TEST=<name>  Run sim/sim_<name>.py\n'
 	@printf '  make sim-<name>       Run sim/sim_<name>.py\n'
-	@printf '  make sim-<name> DUMP=1  Write an FST trace for any simulation\n'
+	@printf '  make sim-<name> WAVES=1  Write an FST trace for the simulation\n'
 	@printf '  make sim-all          Run all sim/sim_*.py tests\n'
 	@printf '  make output           Convert each AesTop RTL source to a separate Verilog file in $(OUTPUT_DIR)/\n'
 	@printf '  make synth            Synthesize RTL with Yosys (SYN_TOP=AesTop)\n'
