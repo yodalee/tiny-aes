@@ -36,7 +36,7 @@ SV2V_OUTPUTS := $(patsubst rtl/%.sv,$(OUTPUT_DIR)/%.v,$(SV2V_RTL_SOURCES))
 
 .PHONY: help output
 .PHONY: sim sim-all
-.PHONY: sim-aestop sim-mixcolumn sim-controladd sim-controlmixcolumn
+.PHONY: sim-aestop sim-aestop-synth sim-mixcolumn sim-controladd sim-controlmixcolumn
 .PHONY: sim-controlshiftrow sim-controlkeyexpand sim-sbox sim-sboxlut
 .PHONY: sim-sboxarish sim-sboxcanright
 .PHONY: synth synth-sky synth-sbox-area clean-sim clean-synth
@@ -51,6 +51,7 @@ help:
 	@printf '  make sim-<name>       Run sim/sim_<name>.py\n'
 	@printf '  make sim-<name> WAVES=1  Write an FST trace for the simulation\n'
 	@printf '  make sim-all          Run all sim/sim_*.py tests\n'
+	@printf '  make sim-aestop-synth Run AesTop tests against the synthesized netlist with Icarus\n'
 	@printf '  make output           Convert each AesTop RTL source to a separate Verilog file in $(OUTPUT_DIR)/\n'
 	@printf '  make synth            Synthesize RTL with Yosys (SYN_TOP=AesTop)\n'
 	@printf '  make synth-sky        Synthesize with SKY130 HD TT (SKY130_PDK=/path/to/pdk)\n'
@@ -89,6 +90,9 @@ sim-%: FORCE
 
 sim-aestop:
 	$(MAKE) -C sim SIM=$(SIM) RTL_SOURCES='$(AESTOP_RTL_SOURCES)' TOPLEVEL=AesTop COCOTB_TEST_MODULES=sim_aestop
+
+sim-aestop-synth:
+	$(MAKE) -C sim SIM=icarus RTL_SOURCES='$(abspath $(SYN_OUT)/AesTop_netlist.v)' TOPLEVEL=AesTop COCOTB_TEST_MODULES=sim_aestop SIM_BUILD=sim_build/AesTop-synth
 
 sim-all:
 	@set -e; \
