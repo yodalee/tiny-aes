@@ -24,7 +24,7 @@ jobs:
         with:
           version: latest
 
-      - name: Install ccache
+      - name: Install simulation build dependencies
         run: |
           sudo apt-get update
           sudo apt-get install --yes binutils ccache mold

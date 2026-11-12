@@ -29,9 +29,11 @@ cp "${rtl_dir}"/*.sv "${compat_rtl}/"
 # Yosys does not parse unpacked arrays of packed structs. Lower each ControlFsm
 # microcode table into an equivalent combinational case function. The later
 # memory_map/ABC passes then map that function to ordinary logic cells.
+# Sized zero literals preserve each field's width in the packed struct.
 awk '
   BEGIN {
     field_count = split("c_stateen c_mixcol c_srow c_loadkey c_keyen c_ke0 c_ke1 c_ke2 c_kxor c_add c_sbox c_ikxor c_dec192_keysel", fields, " ")
+    split("1 1 3 1 1 1 1 1 1 1 1 5 2", widths, " ")
   }
   /^[[:space:]]*localparam[[:space:]]+CtrlSignals_t[[:space:]]+/ {
     in_lut = 1
@@ -56,7 +58,7 @@ awk '
     sub(/^[[:space:]]*/, "", entry)
     sub(/,[[:space:]]*$/, "", entry)
     for (field_index = 1; field_index <= field_count; field_index++)
-      value[field_index] = 0
+      value[field_index] = widths[field_index] sprintf("%c", 39) "b0"
     for (field_index = 1; field_index <= field_count; field_index++) {
       field = fields[field_index]
       if (match(entry, field "[[:space:]]*:[[:space:]]*[^,}]+")) {
