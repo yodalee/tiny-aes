@@ -36,7 +36,7 @@ SV2V_OUTPUTS := $(patsubst rtl/%.sv,$(OUTPUT_DIR)/%.v,$(SV2V_RTL_SOURCES))
 
 .PHONY: help output
 .PHONY: sim sim-all
-.PHONY: sim-aestop sim-mixcolumn sim-controladd sim-controlmixcolumn
+.PHONY: sim-aestop sim-aestop-synth sim-mixcolumn sim-controladd sim-controlmixcolumn
 .PHONY: sim-controlshiftrow sim-controlkeyexpand sim-sbox sim-sboxlut
 .PHONY: sim-sboxarish sim-sboxcanright
 .PHONY: synth synth-sky synth-sbox-area clean-sim clean-synth
@@ -51,9 +51,10 @@ help:
 	@printf '  make sim-<name>       Run sim/sim_<name>.py\n'
 	@printf '  make sim-<name> WAVES=1  Write an FST trace for the simulation\n'
 	@printf '  make sim-all          Run all sim/sim_*.py tests\n'
+	@printf '  make sim-aestop-synth Run AesTop tests against the synthesized netlist with Icarus\n'
 	@printf '  make output           Convert each AesTop RTL source to a separate Verilog file in $(OUTPUT_DIR)/\n'
-	@printf '  make synth            Synthesize RTL with Yosys (SYN_TOP=AesTop)\n'
-	@printf '  make synth-sky        Synthesize with SKY130 HD TT (SKY130_PDK=/path/to/pdk)\n'
+	@printf '  make synth            Synthesize generated Verilog with Yosys (SYN_TOP=AesTop)\n'
+	@printf '  make synth-sky        Synthesize generated Verilog with SKY130 HD TT (SKY130_PDK=/path/to/pdk)\n'
 	@printf '  make synth-sbox-area  Compare Canright and Arish S-box area\n'
 	@printf '  make clean-sim        Remove simulation build outputs\n'
 	@printf '  make clean-synth      Remove synthesis build outputs\n'
@@ -90,6 +91,9 @@ sim-%: FORCE
 sim-aestop:
 	$(MAKE) -C sim SIM=$(SIM) RTL_SOURCES='$(AESTOP_RTL_SOURCES)' TOPLEVEL=AesTop COCOTB_TEST_MODULES=sim_aestop
 
+sim-aestop-synth:
+	$(MAKE) -C sim SIM=icarus RTL_SOURCES='$(abspath $(SYN_OUT)/AesTop_netlist.v)' TOPLEVEL=AesTop COCOTB_TEST_MODULES=sim_aestop SIM_BUILD=sim_build/AesTop-synth
+
 sim-all:
 	@set -e; \
 	for test in sim/sim_*.py; do \
@@ -107,11 +111,11 @@ $(OUTPUT_DIR)/%.v: rtl/%.sv
 clean-sim:
 	$(MAKE) -C sim clean
 
-synth:
-	bash syn/synth.sh $(SYN_TOP) $(SYN_OUT)
+synth: $(SV2V_OUTPUTS)
+	bash syn/synth.sh $(SYN_TOP) $(SYN_OUT) $(SV2V_OUTPUTS)
 
-synth-sky:
-	SKY130_PDK="$(SKY130_PDK)" bash syn/synth-sky130.sh $(SYN_TOP) $(SYN_SKY_OUT)
+synth-sky: $(SV2V_OUTPUTS)
+	SKY130_PDK="$(SKY130_PDK)" bash syn/synth-sky130.sh $(SYN_TOP) $(SYN_SKY_OUT) $(SV2V_OUTPUTS)
 
 synth-sbox-area:
 	bash syn/compare_sbox_area.sh
