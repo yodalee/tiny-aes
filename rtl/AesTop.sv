@@ -7,7 +7,13 @@ module AesTop (
     input              clk,
     input              rst_n,
     // CSR
-    input              r_dec,
+    // 2'b0x: encryption;
+    // 2'b10: decrypt from the last-round key;
+    // 2'b11: decrypt from the first-round key.
+    input [1:0]        r_dec,
+    // 2'b00: AES128
+    // 2'b01: AES192
+    // 2'b1x: AES256
     input [1:0]        r_level,
     /// Data input
     input              i_valid,
@@ -60,7 +66,7 @@ ControlFsm i_control_fsm (
 AesCore i_aes_core (
     .clk(clk),
     .rst_n(rst_n),
-    .r_dec(r_dec),
+    .r_dec(r_dec[1]),
     .r_level(r_level),
     .c_stateen(c_stateen),
     .c_srow(c_srow),

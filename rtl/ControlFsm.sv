@@ -3,7 +3,9 @@
 module ControlFsm (
     input  logic       clk,
     input  logic       rst_n,
-    input  logic       r_dec,
+    // 2'b0x: encryption; 2'b10: decrypt from the last-round key;
+    // 2'b11: decrypt from the first-round key.
+    input  logic [1:0] r_dec,
     input  logic [1:0] r_level,
     // input/output signal
     input  logic       i_valid,
@@ -785,7 +787,7 @@ localparam CtrlSignals_t kD256FinalLut  [0:15] = {
 state_e state, state_n;
 logic [5:0] cycle_q;
 logic [3:0] round_q;
-logic dec_q;
+logic [1:0] dec_q;
 logic [1:0] level_q;
 CtrlSignals_t ctrl;
 
@@ -880,13 +882,30 @@ always_comb begin
     case (state)
         kLoadData: if (i_valid && cycle_q == 15) state_n = kLoadKey;
         kLoadKey: if (i_valid && cycle_q == key_cycles(level_q)-1)
-            case ({dec_q, level_q})
-                3'b000: state_n = kE128Init;
-                3'b001: state_n = kE192Init;
-                3'b010,3'b011: state_n = kE256Init;
-                3'b100: state_n = kD128Init;
-                3'b101: state_n = kD192Init;
-                default: state_n = kD256Init;
+            case (dec_q)
+                // Both encodings with a clear MSB are encryption.
+                2'b00, 2'b01:
+                    case (level_q)
+                        2'b00: state_n = kE128Init;
+                        2'b01: state_n = kE192Init;
+                        default: state_n = kE256Init;
+                    endcase
+                // The established decrypt schedule expects a last-round key.
+                2'b10:
+                    case (level_q)
+                        2'b00: state_n = kD128Init;
+                        2'b01: state_n = kD192Init;
+                        default: state_n = kD256Init;
+                    endcase
+                // First-round-key decrypt is not implemented yet.  Retain
+                // the legacy state path until its separate initialization
+                // sequence is added.
+                default:
+                    case (level_q)
+                        2'b00: state_n = kD128Init;
+                        2'b01: state_n = kD192Init;
+                        default: state_n = kD256Init;
+                    endcase
             endcase
         kE128Init: state_n = kE128Round;
         kE128Round: if (round_q == 8) state_n = kE128Final;
