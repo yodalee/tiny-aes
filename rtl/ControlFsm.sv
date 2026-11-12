@@ -602,39 +602,7 @@ localparam CtrlSignals_t kE256FinalLut  [0:19] = {
     '{c_stateen: 1'b1, c_keyen: 1'b1, c_add: 1'b1, default:'0},
     '{c_stateen: 1'b1, c_keyen: 1'b1, c_add: 1'b1, default:'0}
 };
-localparam CtrlSignals_t kD256InitLut   [0:34] = {
-    '{c_keyen: 1'b1, default:'0}, // Rotate key to first
-    '{c_keyen: 1'b1, default:'0},
-    '{c_keyen: 1'b1, default:'0},
-    '{c_keyen: 1'b1, default:'0},
-    '{c_keyen: 1'b1, default:'0},
-    '{c_keyen: 1'b1, default:'0},
-    '{c_keyen: 1'b1, default:'0},
-    '{c_keyen: 1'b1, default:'0},
-    '{c_keyen: 1'b1, default:'0},
-    '{c_keyen: 1'b1, default:'0},
-    '{c_keyen: 1'b1, default:'0},
-    '{c_keyen: 1'b1, default:'0},
-    '{c_keyen: 1'b1, default:'0},
-    '{c_keyen: 1'b1, default:'0},
-    '{c_keyen: 1'b1, default:'0},
-    '{c_keyen: 1'b1, default:'0},
-    '{c_stateen: 1'b1, c_keyen: 1'b1, c_add: 1'b1, default:'0},
-    '{c_stateen: 1'b1, c_keyen: 1'b1, c_add: 1'b1, default:'0},
-    '{c_stateen: 1'b1, c_keyen: 1'b1, c_add: 1'b1, default:'0},
-    '{c_stateen: 1'b1, c_keyen: 1'b1, c_add: 1'b1, default:'0},
-    '{c_stateen: 1'b1, c_keyen: 1'b1, c_add: 1'b1, default:'0},
-    '{c_stateen: 1'b1, c_keyen: 1'b1, c_add: 1'b1, default:'0},
-    '{c_stateen: 1'b1, c_keyen: 1'b1, c_add: 1'b1, default:'0},
-    '{c_stateen: 1'b1, c_keyen: 1'b1, c_add: 1'b1, default:'0},
-    '{c_stateen: 1'b1, c_keyen: 1'b1, c_add: 1'b1, default:'0},
-    '{c_stateen: 1'b1, c_keyen: 1'b1, c_add: 1'b1, default:'0},
-    '{c_stateen: 1'b1, c_keyen: 1'b1, c_add: 1'b1, default:'0},
-    '{c_stateen: 1'b1, c_keyen: 1'b1, c_add: 1'b1, default:'0},
-    '{c_stateen: 1'b1, c_keyen: 1'b1, c_add: 1'b1, default:'0},
-    '{c_stateen: 1'b1, c_keyen: 1'b1, c_add: 1'b1, default:'0},
-    '{c_stateen: 1'b1, c_keyen: 1'b1, c_add: 1'b1, default:'0},
-    '{c_stateen: 1'b1, c_keyen: 1'b1, c_add: 1'b1, default:'0},
+localparam CtrlSignals_t kD256InitLut   [0:2] = {
     '{c_srow: 3'b111,  default:'0},
     '{c_srow: 3'b011, default:'0},
     '{c_srow: 3'b001, default:'0}
@@ -741,12 +709,13 @@ endfunction
 
 function automatic logic [5:0] cycles(input state_e s);
     case (s)
+        kD256Init: cycles = 3;
         kE192Init, kD128Final, kD192Final, kD256Final: cycles = 16;
         kE128Round, kE192Round2, kE192Round3, kE256Round1, kE256Round3, kE256Round4: cycles = 23;
         kE128Final, kD128Init, kE192Round1, kE192Final, kE256Init, kE256Final: cycles = 20;
         kD128Round, kD192Round2, kD192Round3, kD256Round1, kD256Round2: cycles = 31;
         kE192Round4, kD192Init: cycles = 27;
-        kD192Round1, kD256Init: cycles = 35;
+        kD192Round1: cycles = 35;
         default: cycles = 1;
     endcase
 endfunction
@@ -883,13 +852,17 @@ always_ff @(posedge clk or negedge rst_n) begin
     end
 end
 
+logic can_add;
+assign can_add = !r_dec || level_q[1] == 1'b1;
 always_comb begin
     ctrl = lut(state, cycle_q);
     if (state == kLoadData) ctrl.c_stateen = i_valid;
     if (state == kLoadKey) begin
-        ctrl.c_stateen = i_valid && cycle_q < 16;;
-        ctrl.c_add = i_valid;
-        ctrl.c_sbox = i_valid;
+        // due to ikxor in the init round, only Encryption and
+        // Decryption 256 can do this
+        ctrl.c_stateen = i_valid && can_add &&(r_dec ? cycle_q >= key_cycles(level_q)-16 : cycle_q < 16);
+        ctrl.c_add = i_valid && can_add && (r_dec ? cycle_q >= key_cycles(level_q)-16 : cycle_q < 16);
+        ctrl.c_sbox = i_valid && !r_dec;
         ctrl.c_keyen = i_valid;
         ctrl.c_loadkey = i_valid;
     end
