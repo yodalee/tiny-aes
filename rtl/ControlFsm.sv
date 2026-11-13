@@ -34,32 +34,34 @@ typedef enum logic [4:0] {
     kLoadData,
     kLoadKey,
     kE128Init,
-    kE128Round,
     kE128Final,
     kD128Init,
-    kD128Round,
     kD128Final,
     kE192Init,
+    kE192Final,
+    kD192Init,
+    kD192Final,
+    kE256Init,
+    kE256Final,
+    kD256Init,
+    kD256Final,
+    kOutput,
+
+    // Keep all round states in 16..29 so bit 4 is the round-state flag.
+    kE128Round = 5'd16,
+    kD128Round,
     kE192Round1,
     kE192Round2,
     kE192Round3,
     kE192Round4,
-    kE192Final,
-    kD192Init,
     kD192Round1,
     kD192Round2,
     kD192Round3,
-    kD192Final,
-    kE256Init,
     kE256Round1,
     kE256Round3,
     kE256Round4,
-    kE256Final,
-    kD256Init,
     kD256Round1,
-    kD256Round2,
-    kD256Final,
-    kOutput
+    kD256Round2
 } state_e;
 
 typedef struct packed {
@@ -811,12 +813,7 @@ function automatic logic [5:0] cycles(input state_e s);
 endfunction
 
 function automatic logic is_round(input state_e s);
-    case (s)
-        kE128Round, kD128Round, kE192Round1, kE192Round2, kE192Round3, kE192Round4,
-        kD192Round1, kD192Round2, kD192Round3, kE256Round1, kE256Round3, kE256Round4,
-        kD256Round1, kD256Round2: is_round = 1'b1;
-        default: is_round = 1'b0;
-    endcase
+    is_round = s[4];
 endfunction
 
 /* verilator lint_off WIDTHTRUNC */
