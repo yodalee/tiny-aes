@@ -72,6 +72,76 @@ typedef struct packed {
     logic [1:0] c_dec192_keysel;
 } CtrlSignals_t;
 
+// Sub-controller integration scaffold.  These request signals deliberately
+// remain inactive until the LUT schedule is migrated to sub-controller starts.
+// Their control outputs are isolated below, so the active LUT control path is
+// unaffected.
+logic start_add,       done_add;
+logic start_keyexpand, done_keyexpand;
+logic start_shiftrow,  done_shiftrow;
+logic start_mixcolumn, done_mixcolumn;
+
+logic       sub_c_stateen, sub_c_mixcol;
+logic [2:0] sub_c_srow;
+logic       sub_c_keyen, sub_c_ke0, sub_c_ke1, sub_c_ke2;
+logic       sub_c_kxor, sub_c_ikxor;
+logic       sub_c_add, sub_c_sbox;
+
+assign start_add       = 1'b0;
+assign start_keyexpand = 1'b0;
+assign start_shiftrow  = 1'b0;
+assign start_mixcolumn = 1'b0;
+
+ControlAdd i_control_add (
+    .clk(clk),
+    .rst_n(rst_n),
+    .start(start_add),
+    .r_dec(r_dec),
+    .i_add(1'b0),
+    .i_sbox(1'b0),
+    .i_xor(2'b00),
+    .busy(),
+    .done(done_add),
+    .c_keyen(sub_c_keyen),
+    .c_add(sub_c_add),
+    .c_stateen(sub_c_stateen),
+    .c_sbox(sub_c_sbox),
+    .c_kxor(sub_c_kxor),
+    .c_ikxor(sub_c_ikxor)
+);
+
+ControlKeyExpand i_control_keyexpand (
+    .clk(clk),
+    .rst_n(rst_n),
+    .start(start_keyexpand),
+    .is_ke2(1'b0),
+    .busy(),
+    .done(done_keyexpand),
+    .c_ke0(sub_c_ke0),
+    .c_ke1(sub_c_ke1),
+    .c_ke2(sub_c_ke2)
+);
+
+ControlShiftrow i_control_shiftrow (
+    .clk(clk),
+    .rst_n(rst_n),
+    .r_dec(r_dec),
+    .start(start_shiftrow),
+    .busy(),
+    .done(done_shiftrow),
+    .c_srow(sub_c_srow)
+);
+
+ControlMixColumn i_control_mixcolumn (
+    .clk(clk),
+    .rst_n(rst_n),
+    .r_dec(r_dec),
+    .start(start_mixcolumn),
+    .busy(),
+    .done(done_mixcolumn),
+    .c_mixcol(sub_c_mixcol)
+);
+
 // The LUT type is deliberately shared by all processing states.  These
 // zero-filled tables are the specified microcode insertion points; the
 // protocol and timing below do not depend on their contents.
