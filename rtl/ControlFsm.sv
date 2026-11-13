@@ -1,7 +1,9 @@
 module ControlFsm (
     input  logic       clk,
     input  logic       rst_n,
-    input  logic       r_dec,
+    // 2'b0x: encryption; 2'b10: decrypt from the last-round key;
+    // 2'b11: decrypt from the first-round key.
+    input  logic [1:0] r_dec,
     input  logic [1:0] r_level,
     input  logic       i_valid,
     output logic       i_ready,
@@ -323,7 +325,7 @@ ControlAdd i_control_add (
     .clk(clk),
     .rst_n(rst_n),
     .start(start_add),
-    .r_dec(r_dec),
+    .r_dec(r_dec[1]),
     .i_add(add_i_add),
     .i_sbox(add_i_sbox),
     .i_xor(add_i_xor),
@@ -339,7 +341,7 @@ ControlAdd i_control_add (
 ControlShiftrow i_control_shiftrow (
     .clk(clk),
     .rst_n(rst_n),
-    .r_dec(r_dec),
+    .r_dec(r_dec[1]),
     .start(start_shiftrow),
     .done(done_shiftrow),
     .c_srow(c_srow)
@@ -347,7 +349,7 @@ ControlShiftrow i_control_shiftrow (
 ControlMixColumn i_control_mixcolumn (
     .clk(clk),
     .rst_n(rst_n),
-    .r_dec(r_dec),
+    .r_dec(r_dec[1]),
     .start(start_mixcolumn),
     .done(done_mixcolumn),
     .c_mixcol(c_mixcol)
@@ -367,10 +369,13 @@ always_comb begin
  state_n=state;
  case(state)
   kLoadData:if(i_valid&&count==6'd15) state_n=kLoadKey;
-  kLoadKey:if(i_valid&&count==key_cycles(r_level)-1'b1) case({r_dec,r_level})
-   3'b000:state_n=kE128Init; 3'b001:state_n=kE192Init;
-   3'b010,3'b011:state_n=kE256Init; 3'b100:state_n=kD128Init;
-   3'b101:state_n=kD192Init; default:state_n=kD256Init;
+  kLoadKey:if(i_valid&&count==key_cycles(r_level)-1'b1) case({r_dec[1],r_level})
+   3'b000:state_n=kE128Init;
+   3'b001:state_n=kE192Init;
+   3'b010,3'b011:state_n=kE256Init;
+   3'b100:state_n=kD128Init;
+   3'b101:state_n=kD192Init;
+   3'b110,3'b111: state_n=kD256Init;
   endcase
   kE128Init:if(state_done)state_n=kE128Round;
   kE128Round:if(state_done&&round==8)state_n=kE128Final;
