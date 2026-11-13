@@ -34,32 +34,34 @@ typedef enum logic [4:0] {
     kLoadData,
     kLoadKey,
     kE128Init,
-    kE128Round,
     kE128Final,
     kD128Init,
-    kD128Round,
     kD128Final,
     kE192Init,
+    kE192Final,
+    kD192Init,
+    kD192Final,
+    kE256Init,
+    kE256Final,
+    kD256Init,
+    kD256Final,
+    kOutput,
+
+    // Keep all round states in 16..29 so bit 4 is the round-state flag.
+    kE128Round = 5'd16,
+    kD128Round,
     kE192Round1,
     kE192Round2,
     kE192Round3,
     kE192Round4,
-    kE192Final,
-    kD192Init,
     kD192Round1,
     kD192Round2,
     kD192Round3,
-    kD192Final,
-    kE256Init,
     kE256Round1,
     kE256Round3,
     kE256Round4,
-    kE256Final,
-    kD256Init,
     kD256Round1,
-    kD256Round2,
-    kD256Final,
-    kOutput
+    kD256Round2
 } state_e;
 
 typedef struct packed {
@@ -800,10 +802,10 @@ endfunction
 function automatic logic [5:0] cycles(input state_e s);
     case (s)
         kE128Init, kD128Final, kD192Final, kD256Final: cycles = 16;
-        kE128Round, kE192Round2, kE192Round3, kE256Round1, kE256Round3, kE256Round4, kE192Init: cycles = 23;
         kE128Final, kD128Init, kE192Round1, kE192Final, kE256Final: cycles = 20;
-        kD128Round, kD192Round2, kD192Round3, kD256Round1, kD256Round2: cycles = 31;
+        kE128Round, kE192Round2, kE192Round3, kE256Round1, kE256Round3, kE256Round4, kE192Init: cycles = 23;
         kE192Round4, kD192Init: cycles = 27;
+        kD128Round, kD192Round2, kD192Round3, kD256Round1, kD256Round2: cycles = 31;
         kD192Round1, kD256Init: cycles = 35;
         kE256Init: cycles = 52;
         default: cycles = 1;
@@ -811,12 +813,7 @@ function automatic logic [5:0] cycles(input state_e s);
 endfunction
 
 function automatic logic is_round(input state_e s);
-    case (s)
-        kE128Round, kD128Round, kE192Round1, kE192Round2, kE192Round3, kE192Round4,
-        kD192Round1, kD192Round2, kD192Round3, kE256Round1, kE256Round3, kE256Round4,
-        kD256Round1, kD256Round2: is_round = 1'b1;
-        default: is_round = 1'b0;
-    endcase
+    is_round = s[4];
 endfunction
 
 /* verilator lint_off WIDTHTRUNC */
@@ -831,15 +828,31 @@ function automatic CtrlSignals_t lut(input state_e s, input logic [5:0] i);
         // Evaluate every table before selecting one.  This also keeps the
         // synthesis compatibility lowering from making conditionally-called
         // function results into latches.
-        e128_init = kE128InitLut[i];   e128_round = kE128RoundLut[i]; e128_final = kE128FinalLut[i];
-        d128_init = kD128InitLut[i];   d128_round = kD128RoundLut[i]; d128_final = kD128FinalLut[i];
-        e192_init = kE192InitLut[i];   e192_r1 = kE192R1Lut[i];       e192_r2 = kE192R2Lut[i];
-        e192_r3 = kE192R3Lut[i];       e192_r4 = kE192R4Lut[i];       e192_final = kE192FinalLut[i];
-        d192_init = kD192InitLut[i];   d192_r1 = kD192R1Lut[i];       d192_r2 = kD192R2Lut[i];
-        d192_r3 = kD192R3Lut[i];       d192_final = kD192FinalLut[i];
-        e256_init = kE256InitLut[i];   e256_r1 = kE256R1Lut[i];       e256_r3 = kE256R3Lut[i];
-        e256_r4 = kE256R4Lut[i];       e256_final = kE256FinalLut[i];
-        d256_init = kD256InitLut[i];   d256_r1 = kD256R1Lut[i];       d256_r2 = kD256R2Lut[i];
+        e128_init = kE128InitLut[i];
+        e128_round = kE128RoundLut[i];
+        e128_final = kE128FinalLut[i];
+        d128_init = kD128InitLut[i];
+        d128_round = kD128RoundLut[i];
+        d128_final = kD128FinalLut[i];
+        e192_init = kE192InitLut[i];
+        e192_r1 = kE192R1Lut[i];
+        e192_r2 = kE192R2Lut[i];
+        e192_r3 = kE192R3Lut[i];
+        e192_r4 = kE192R4Lut[i];
+        e192_final = kE192FinalLut[i];
+        d192_init = kD192InitLut[i];
+        d192_r1 = kD192R1Lut[i];
+        d192_r2 = kD192R2Lut[i];
+        d192_r3 = kD192R3Lut[i];
+        d192_final = kD192FinalLut[i];
+        e256_init = kE256InitLut[i];
+        e256_r1 = kE256R1Lut[i];
+        e256_r3 = kE256R3Lut[i];
+        e256_r4 = kE256R4Lut[i];
+        e256_final = kE256FinalLut[i];
+        d256_init = kD256InitLut[i];
+        d256_r1 = kD256R1Lut[i];
+        d256_r2 = kD256R2Lut[i];
         d256_final = kD256FinalLut[i];
         lut = '0;
         case (s)
@@ -929,10 +942,11 @@ always_ff @(posedge clk or negedge rst_n) begin
     else if ((state == kLoadData || state == kLoadKey) && !i_valid) begin end
     else if (state == kOutput && !o_ready) begin end
     else begin
-        if (state == kLoadData && cycle_q == 0) begin dec_q <= r_dec;
+        if (state == kLoadData && cycle_q == 0) begin 
+            dec_q <= r_dec;
             level_q <= r_level;
         end
-        if ((state == kLoadData && cycle_q == 15) || 
+        if ((state == kLoadData && cycle_q == 15) ||
             (state == kLoadKey && cycle_q == key_cycles(level_q)-1) ||
             (state == kOutput && cycle_q == 15) ||
             ((state != kLoadData && state != kLoadKey && state != kOutput) && cycle_q == cycles(state)-1)) begin
@@ -946,11 +960,15 @@ end
 
 always_comb begin
     ctrl = lut(state, cycle_q);
-    if (state == kLoadData) ctrl.c_stateen = i_valid;
-    if (state == kLoadKey) begin
+    if (state == kLoadData) begin
+        ctrl.c_stateen = i_valid;
+    end else if (state == kLoadKey) begin
         ctrl.c_keyen = i_valid;
-        ctrl.c_loadkey = i_valid; end
-    if (state == kOutput) ctrl.c_stateen = o_ready;
+        ctrl.c_loadkey = i_valid;
+    end
+    if (state == kOutput) begin
+        ctrl.c_stateen = o_ready;
+    end
 end
 
 assign i_ready = state == kLoadData || state == kLoadKey;
