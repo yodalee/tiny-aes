@@ -13,18 +13,15 @@ module ControlShiftrow (
     output logic [2:0] c_srow
 );
 
-logic       dec_q;
 logic [1:0] step;
 
 always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-        dec_q    <= 1'b0;
         step     <= 2'd0;
         busy     <= 1'b0;
         done     <= 1'b0;
         c_srow   <= 3'b000;
     end else if (start && !busy) begin
-        dec_q    <= r_dec;
         step     <= 2'd1;
         busy     <= 1'b1;
         done     <= 1'b0;
@@ -33,12 +30,12 @@ always_ff @(posedge clk or negedge rst_n) begin
         step     <= 2'd2;
         busy     <= 1'b1;
         done     <= 1'b0;
-        c_srow   <= dec_q ? (c_srow >> 1) : (c_srow << 1);
+        c_srow   <= r_dec ? (c_srow >> 1) : (c_srow << 1);
     end else if (busy && (step == 2'd2)) begin
         step     <= 2'd0;
         busy     <= 1'b1;
         done     <= 1'b1;
-        c_srow   <= dec_q ? (c_srow >> 1) : (c_srow << 1);
+        c_srow   <= r_dec ? (c_srow >> 1) : (c_srow << 1);
     end else begin
         busy     <= 1'b0;
         done     <= 1'b0;
