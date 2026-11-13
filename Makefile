@@ -16,9 +16,11 @@ AESTOP_RTL_SOURCES := \
 	../rtl/RcLUT.sv \
 	../rtl/AddRoundKey.sv \
 	../rtl/AesCore.sv \
-	../rtl/ControlFsm.sv \
+	../rtl/ControlAdd.sv \
+	../rtl/ControlKeyExpand.sv \
 	../rtl/ControlMixColumn.sv \
 	../rtl/ControlShiftrow.sv \
+	../rtl/ControlFsm.sv \
 	../rtl/AesTop.sv
 SV2V_RTL_SOURCES := \
 	rtl/EnableFF.sv \
@@ -29,6 +31,10 @@ SV2V_RTL_SOURCES := \
 	rtl/AddRoundKey.sv \
 	rtl/KeyExpansion.sv \
 	rtl/AesState.sv \
+	rtl/ControlAdd.sv \
+	rtl/ControlKeyExpand.sv \
+	rtl/ControlMixColumn.sv \
+	rtl/ControlShiftrow.sv \
 	rtl/ControlFsm.sv \
 	rtl/AesCore.sv \
 	rtl/AesTop.sv
