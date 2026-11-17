@@ -63,10 +63,10 @@ logic [5:0] count;
 logic [3:0] round;
 logic [3:0] phase;
 logic state_start;
-logic start_add,busy_add,done_add;
-logic start_shiftrow,busy_shiftrow,done_shiftrow;
-logic start_mixcolumn,busy_mixcolumn,done_mixcolumn;
-logic start_keyexpand,busy_keyexpand,done_keyexpand;
+logic start_add,done_add;
+logic start_shiftrow,done_shiftrow;
+logic start_mixcolumn,done_mixcolumn;
+logic start_keyexpand,done_keyexpand;
 logic state_done;
 logic add_i_add,add_i_sbox;
 logic [1:0] add_i_xor;
@@ -219,7 +219,6 @@ always_comb begin
                         done_keyexpand;
         default: ;
     endcase
-    start_add = start_add && (!busy_add || done_add);
 end
 
 always_comb begin
@@ -235,7 +234,6 @@ always_comb begin
         kD256Init: start_shiftrow = done_add && count == 4;
         default: start_shiftrow = 1'b0;
     endcase
-    start_shiftrow = start_shiftrow && (!busy_shiftrow || done_shiftrow);
 end
 
 always_comb begin
@@ -250,7 +248,6 @@ always_comb begin
         kE192Init: start_mixcolumn = done_shiftrow;
         default: start_mixcolumn = 1'b0;
     endcase
-    start_mixcolumn = start_mixcolumn && (!busy_mixcolumn || done_mixcolumn);
 end
 
 always_comb begin
@@ -267,7 +264,6 @@ always_comb begin
         kE256Init: start_keyexpand = done_add && count == 4;
         default: start_keyexpand = 1'b0;
     endcase
-    start_keyexpand = start_keyexpand && (!busy_keyexpand || done_keyexpand);
     // The AES-256 LUT uses ke2 only for its second expansion step.  Init,
     // R4, and decryption R1 retain the normal ke0/ke1 sequence.
     keyexpand_is_ke2 = (state == kE256Round3 || state == kD256Round2);
@@ -282,7 +278,6 @@ ControlAdd i_control_add (
     .i_sbox(add_i_sbox),
     .i_xor(add_i_xor),
     .i_ikxor(add_i_ikxor),
-    .busy(busy_add),
     .done(done_add),
     .c_keyen(add_keyen),
     .c_add(c_add),
@@ -296,7 +291,6 @@ ControlShiftrow i_control_shiftrow (
     .rst_n(rst_n),
     .r_dec(r_dec),
     .start(start_shiftrow),
-    .busy(busy_shiftrow),
     .done(done_shiftrow),
     .c_srow(c_srow)
 );
@@ -305,7 +299,6 @@ ControlMixColumn i_control_mixcolumn (
     .rst_n(rst_n),
     .r_dec(r_dec),
     .start(start_mixcolumn),
-    .busy(busy_mixcolumn),
     .done(done_mixcolumn),
     .c_mixcol(c_mixcol)
 );
@@ -314,7 +307,6 @@ ControlKeyExpand i_control_keyexpand (
     .rst_n(rst_n),
     .start(start_keyexpand),
     .is_ke2(keyexpand_is_ke2),
-    .busy(busy_keyexpand),
     .done(done_keyexpand),
     .c_ke0(c_ke0),
     .c_ke1(c_ke1),
@@ -408,8 +400,8 @@ assign c_stateen = (state == kLoadData) ? i_valid :
 assign c_loadkey = (state == kLoadKey) && i_valid;
 assign c_keyen = (state == kLoadKey) ? i_valid : add_keyen;
 assign c_ikxor = add_ikxor;
-assign c_dec192_keysel = (state == kD192Round1 && busy_add) ? 2'b01 :
-                         (state == kD192Round2 && busy_add) ? 2'b10 : 2'b00;
+assign c_dec192_keysel = (state == kD192Round1 && add_keyen) ? 2'b01 :
+                         (state == kD192Round2 && add_keyen) ? 2'b10 : 2'b00;
 assign i_ready=(state==kLoadData)||(state==kLoadKey);
 assign o_valid=(state==kOutput);
 assign d_state=state;

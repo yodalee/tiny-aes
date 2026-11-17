@@ -12,7 +12,6 @@ module ControlAdd (
     input  logic       i_sbox,
     input  logic [1:0] i_xor,
     input  logic [4:0] i_ikxor,
-    output logic       busy,
     output logic       done,
     output logic       c_keyen,
     output logic       c_add,
@@ -26,6 +25,7 @@ logic       add_q;
 logic       sbox_q;
 logic [1:0] xor_q;
 logic [4:0] ikxor_q;
+logic       busy;
 logic [2:0] cycle;
 
 function automatic logic xor_enabled(

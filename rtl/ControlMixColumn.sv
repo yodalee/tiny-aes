@@ -7,7 +7,6 @@ module ControlMixColumn (
     input  logic rst_n,
     input  logic r_dec,
     input  logic start,
-    output logic busy,
     output logic done,
     output logic c_mixcol
 );
@@ -16,6 +15,7 @@ localparam logic [3:0] ENC_CYCLES = 4'd4;
 localparam logic [3:0] DEC_CYCLES = 4'd12;
 
 logic [3:0] cycles_left;
+logic       busy;
 
 always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin

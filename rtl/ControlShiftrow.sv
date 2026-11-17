@@ -7,13 +7,13 @@ module ControlShiftrow (
     input  logic rst_n,
     input  logic r_dec,
     input  logic start,
-    output logic busy,
     output logic done,
     // [2:0] = {row3, row2, row1}
     output logic [2:0] c_srow
 );
 
 logic [1:0] step;
+logic       busy;
 
 always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
