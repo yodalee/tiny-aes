@@ -135,88 +135,139 @@ end
 // and settings together makes state-specific execution order visible here.
 always_comb begin
     start_add = 1'b0;
-    // AES-256 init issues two data requests, two key-only rotations, then
-    // two key-xor requests.  ControlAdd supplies each eight-byte cadence.
-    add_i_add = !((state == kE256Init && count >= 2) ||
-                  (state == kD192Init && count < 1) ||
-                  (state == kD256Init && count < 2));
-    add_i_sbox = !(state == kE128Final || state == kE192Final ||
-                   state == kE256Final || (state == kE256Init && count >= 2) ||
-                   state == kD128Init ||
-                   state == kD192Init || state == kD256Init);
+    add_i_add = 1'b1;
+    add_i_sbox = 1'b1;
     add_i_xor = 2'b00;
     add_i_ikxor = 5'b00000;
-    // The LUT's forward key-xor windows are whole, first-half, or absent.
-    if (!r_dec) begin
-        if (state == kE256Init) begin
-            if (count == 4) add_i_xor = 2'b11;
-            else if (count == 5) add_i_xor = 2'b10;
-        end else if (state == kE192Round3) begin
-            add_i_xor = 2'b11;
-        end else if (state == kE128Round || state == kE192Round2 ||
-            state == kE256Round3 ||
-            state == kE256Round4) begin
-            add_i_xor = (count == 0) ? 2'b11 : 2'b10;
-        end else if (state == kE128Final || state == kE192Final ||
-                     state == kE256Final ||
-                     (state == kE192Round1 && count == 1) ||
-                     (state == kE192Round4 && count == 1)) begin
-            add_i_xor = 2'b11;
-        end else if (state == kE192Round4 && count == 0) begin
-            add_i_xor = 2'b10;
-        end
-    end else if (state == kD192Round3 && count == 0) begin
-        add_i_xor = 2'b10;
-    end else if (state == kD192Init && count == 2) begin
-        add_i_xor = 2'b01;
-    end else if (count == 1 && state != kD192Init) begin
-        add_i_xor = 2'b01;
-    end
-    if (r_dec) begin
-        case (state)
-            kD128Init, kD128Round: add_i_ikxor = 5'b10011;
-            kD192Init:             add_i_ikxor = 5'b00111;
-            kD192Round1:           add_i_ikxor = 5'b11100;
-            kD192Round2:           add_i_ikxor = 5'b11000;
-            kD192Round3:           add_i_ikxor = (count == 0) ? 5'b00110 : 5'b00111;
-            kD256Round1, kD256Round2: add_i_ikxor = 5'b11100;
-            default: ;
-        endcase
-    end
+
+    // The state selects the request template; count only selects a request
+    // within templates that require more than one variant.
     case (state)
-        kE128Init, kD128Final, kD192Final, kD256Final:
+        kE128Init: begin
             start_add = state_start || (done_add && count == 1);
-        kE128Round, kE192Round2, kE192Round3, kE256Round1,
-        kE256Round3, kE256Round4:
+        end
+
+        kD128Final, kD192Final, kD256Final: begin
+            start_add = state_start || (done_add && count == 1);
+            add_i_xor = (count == 1) ? 2'b01 : 2'b00;
+        end
+
+        kE128Round: begin
             start_add = done_mixcolumn || (done_add && count == 1);
-        kE128Final, kE192Final, kE256Final:
+            add_i_xor = (count == 0) ? 2'b11 : 2'b10;
+        end
+
+        kE128Final, kE192Final, kE256Final: begin
             start_add = done_keyexpand || (done_add && count == 1);
-        kD128Init:
+            add_i_sbox = 1'b0;
+            add_i_xor = 2'b11;
+        end
+
+        kD128Init: begin
             start_add = state_start || (done_add && count == 1);
-        kD128Round, kD192Round2, kD192Round3, kD256Round1, kD256Round2:
+            add_i_sbox = 1'b0;
+            add_i_xor = (count == 1) ? 2'b01 : 2'b00;
+            add_i_ikxor = 5'b10011;
+        end
+
+        kD128Round: begin
             start_add = state_start || (done_add && count == 1);
-        kE192Init:
+            add_i_xor = (count == 1) ? 2'b01 : 2'b00;
+            add_i_ikxor = 5'b10011;
+        end
+
+        kE192Init: begin
             start_add = state_start || (done_add && count == 1);
-        kE192Round1:
+        end
+
+        kE192Round1: begin
             start_add = state_start || done_keyexpand;
-        kE192Round4:
+            add_i_xor = (count == 1) ? 2'b11 : 2'b00;
+        end
+
+        kE192Round2: begin
+            start_add = done_mixcolumn || (done_add && count == 1);
+            add_i_xor = (count == 0) ? 2'b11 : 2'b10;
+        end
+
+        kE192Round3: begin
+            start_add = done_mixcolumn || (done_add && count == 1);
+            add_i_xor = 2'b11;
+        end
+
+        kE192Round4: begin
             // The LUT performs the first-half kxor request, expands the
             // key, then performs one full kxor request.
             start_add = done_mixcolumn || done_keyexpand;
-        kD192Init:
+            add_i_xor = (count == 0) ? 2'b10 :
+                        (count == 1) ? 2'b11 : 2'b00;
+        end
+
+        kD192Init: begin
             // Rotate the key once, then process both state halves.
             start_add = state_start || (done_add && count < 3);
-        // Rotate the 256-bit key twice, then process both state halves.
-        kD256Init:
-            start_add = state_start || (done_add && count < 4);
-        kD192Round1:
+            add_i_add = count != 0;
+            add_i_sbox = 1'b0;
+            add_i_xor = (count == 2) ? 2'b01 : 2'b00;
+            add_i_ikxor = 5'b00111;
+        end
+
+        kD192Round1: begin
             start_add = state_start || done_keyexpand;
-        kE256Init:
+            add_i_xor = (count == 1) ? 2'b01 : 2'b00;
+            add_i_ikxor = 5'b11100;
+        end
+
+        kD192Round2: begin
+            start_add = state_start || (done_add && count == 1);
+            add_i_xor = (count == 1) ? 2'b01 : 2'b00;
+            add_i_ikxor = 5'b11000;
+        end
+
+        kD192Round3: begin
+            start_add = state_start || (done_add && count == 1);
+            add_i_xor = (count == 0) ? 2'b10 :
+                        (count == 1) ? 2'b01 : 2'b00;
+            add_i_ikxor = (count == 0) ? 5'b00110 : 5'b00111;
+        end
+
+        // Rotate the 256-bit key twice, then process both state halves.
+        kD256Init: begin
+            start_add = state_start || (done_add && count < 4);
+            add_i_add = count >= 2;
+            add_i_sbox = 1'b0;
+            add_i_xor = (count == 1) ? 2'b01 : 2'b00;
+        end
+
+        kD256Round1, kD256Round2: begin
+            start_add = state_start || (done_add && count == 1);
+            add_i_xor = (count == 1) ? 2'b01 : 2'b00;
+            add_i_ikxor = 5'b11100;
+        end
+
+        kE256Init: begin
             // Requests 0--3 launch consecutively.  Request 4 waits for the
             // key expansion, and request 5 follows request 4 immediately.
             start_add = state_start ||
                         (done_add && ((count < 4) || (count == 5))) ||
                         done_keyexpand;
+            if (count >= 2) begin
+                add_i_add = 1'b0;
+                add_i_sbox = 1'b0;
+            end
+            add_i_xor = (count == 4) ? 2'b11 :
+                        (count == 5) ? 2'b10 : 2'b00;
+        end
+
+        kE256Round1: begin
+            start_add = done_mixcolumn || (done_add && count == 1);
+        end
+
+        kE256Round3, kE256Round4: begin
+            start_add = done_mixcolumn || (done_add && count == 1);
+            add_i_xor = (count == 0) ? 2'b11 : 2'b10;
+        end
+
         default: ;
     endcase
 end
