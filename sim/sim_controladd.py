@@ -11,7 +11,6 @@ def controls(dut):
         int(dut.c_sbox.value),
         int(dut.c_kxor.value),
         int(dut.c_ikxor.value),
-        int(dut.busy.value),
         int(dut.done.value),
     )
 
@@ -26,7 +25,7 @@ async def reset(dut):
     dut.i_ikxor.value = 0
     await RisingEdge(dut.clk)
     await ReadOnly()
-    assert controls(dut) == (0, 0, 0, 0, 0, 0, 0, 0)
+    assert controls(dut) == (0, 0, 0, 0, 0, 0, 0)
     await Timer(1, unit="ns")
     dut.rst_n.value = 1
 
@@ -59,16 +58,16 @@ async def test_encrypt_sbox_and_full_kxor(dut):
     await reset(dut)
 
     await trigger(dut, r_dec=0, i_add=1, i_sbox=1, i_xor=0b11)
-    assert controls(dut) == (1, 1, 1, 1, 1, 0, 1, 0)
+    assert controls(dut) == (1, 1, 1, 1, 1, 0, 0)
     assert await observe(dut, 8) == [
-        (1, 1, 1, 1, 1, 0, 1, 0),
-        (1, 1, 1, 1, 1, 0, 1, 0),
-        (1, 1, 1, 1, 1, 0, 1, 0),
-        (1, 1, 1, 1, 1, 0, 1, 0),
-        (1, 1, 1, 1, 1, 0, 1, 0),
-        (1, 1, 1, 1, 1, 0, 1, 0),
-        (1, 1, 1, 1, 1, 0, 1, 1),
-        (0, 0, 0, 0, 0, 0, 0, 0),
+        (1, 1, 1, 1, 1, 0, 0),
+        (1, 1, 1, 1, 1, 0, 0),
+        (1, 1, 1, 1, 1, 0, 0),
+        (1, 1, 1, 1, 1, 0, 0),
+        (1, 1, 1, 1, 1, 0, 0),
+        (1, 1, 1, 1, 1, 0, 0),
+        (1, 1, 1, 1, 1, 0, 1),
+        (0, 0, 0, 0, 0, 0, 0),
     ]
 
 
@@ -119,14 +118,14 @@ async def test_key_only_rotation_and_sbox_only_control(dut):
     await reset(dut)
 
     await trigger(dut, r_dec=0, i_add=0, i_sbox=0, i_xor=0)
-    assert controls(dut) == (0, 0, 1, 0, 0, 0, 1, 0)
+    assert controls(dut) == (0, 0, 1, 0, 0, 0, 0)
     assert all(value[:6] == (0, 0, 1, 0, 0, 0)
                for value in await observe(dut, 7))
 
     await RisingEdge(dut.clk)
     await Timer(1, unit="ns")
     await trigger(dut, r_dec=0, i_add=0, i_sbox=1, i_xor=0)
-    assert controls(dut) == (0, 1, 1, 1, 0, 0, 1, 0)
+    assert controls(dut) == (0, 1, 1, 1, 0, 0, 0)
 
 
 @cocotb.test()
@@ -135,11 +134,11 @@ async def test_terminal_done_accepts_next_request_without_a_bubble(dut):
     await reset(dut)
 
     await trigger(dut, r_dec=0, i_add=0, i_sbox=0, i_xor=0)
-    assert controls(dut) == (0, 0, 1, 0, 0, 0, 1, 0)
+    assert controls(dut) == (0, 0, 1, 0, 0, 0, 0)
 
     # Advance to the terminal output cycle, where done is asserted.
     await observe(dut, 7)
-    assert controls(dut) == (0, 0, 1, 0, 0, 0, 1, 1)
+    assert controls(dut) == (0, 0, 1, 0, 0, 0, 1)
     await Timer(1, unit="ns")
 
     # A request accepted with done replaces the completed operation directly.
@@ -150,6 +149,6 @@ async def test_terminal_done_accepts_next_request_without_a_bubble(dut):
     dut.start.value = 1
     await RisingEdge(dut.clk)
     await ReadOnly()
-    assert controls(dut) == (1, 1, 1, 1, 1, 0, 1, 0)
+    assert controls(dut) == (1, 1, 1, 1, 1, 0, 0)
     await Timer(1, unit="ns")
     dut.start.value = 0

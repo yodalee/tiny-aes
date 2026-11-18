@@ -10,7 +10,6 @@ async def reset(dut):
     await RisingEdge(dut.clk)
     await ReadOnly()
     assert controls(dut) == 0
-    assert dut.busy.value == 0
     assert dut.done.value == 0
     await Timer(1, unit="ns")
     dut.rst_n.value = 1
@@ -35,7 +34,7 @@ async def observe_controls(dut, cycles):
         await RisingEdge(dut.clk)
         await ReadOnly()
         observed.append(
-            (controls(dut), int(dut.busy.value), int(dut.done.value))
+            (controls(dut), int(dut.done.value))
         )
     return observed
 
@@ -46,15 +45,11 @@ async def test_encrypt_generates_shiftrow_sequence(dut):
     await reset(dut)
 
     await trigger(dut, r_dec=0)
-    assert (controls(dut), int(dut.busy.value), int(dut.done.value)) == (
-        7,
-        1,
-        0,
-    )
+    assert (controls(dut), int(dut.done.value)) == (7, 0)
     assert await observe_controls(dut, 3) == [
-        (6, 1, 0),
-        (4, 1, 1),
-        (0, 0, 0),
+        (6, 0),
+        (4, 1),
+        (0, 0),
     ]
 
 
@@ -64,20 +59,16 @@ async def test_decrypt_generates_inverse_shiftrow_sequence(dut):
     await reset(dut)
 
     await trigger(dut, r_dec=1)
-    assert (controls(dut), int(dut.busy.value), int(dut.done.value)) == (
-        7,
-        1,
-        0,
-    )
+    assert (controls(dut), int(dut.done.value)) == (7, 0)
     assert await observe_controls(dut, 3) == [
-        (3, 1, 0),
-        (1, 1, 1),
-        (0, 0, 0),
+        (3, 0),
+        (1, 1),
+        (0, 0),
     ]
 
 
 @cocotb.test()
-async def test_start_is_ignored_while_busy(dut):
+async def test_start_is_ignored_while_active(dut):
     cocotb.start_soon(Clock(dut.clk, 10, unit="ns").start())
     await reset(dut)
 
@@ -85,15 +76,11 @@ async def test_start_is_ignored_while_busy(dut):
     dut.start.value = 1
     await RisingEdge(dut.clk)
     await ReadOnly()
-    assert (controls(dut), int(dut.busy.value), int(dut.done.value)) == (
-        6,
-        1,
-        0,
-    )
+    assert (controls(dut), int(dut.done.value)) == (6, 0)
     await Timer(1, unit="ns")
     dut.start.value = 0
     assert await observe_controls(dut, 3) == [
-        (4, 1, 1),
-        (0, 0, 0),
-        (0, 0, 0),
+        (4, 1),
+        (0, 0),
+        (0, 0),
     ]
