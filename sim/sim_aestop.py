@@ -2,8 +2,7 @@
 
 Each transaction sends the 16-byte input block first, followed by its key.
 Encryption tests exercise both encryption encodings of the byte-streaming
-path.  Decryption tests remain skipped until ControlFsm implements separate
-last-round-key and first-round-key schedules.
+path. Decryption tests cover last-round-key and first-round-key schedules.
 """
 
 import cocotb
@@ -181,19 +180,19 @@ async def test_aes256_decrypt_last_round_key(dut):
     await check_aes(dut, r_dec=0b10, key_length=32)
 
 
-@cocotb.test(skip=True)
+@cocotb.test()
 async def test_aes128_decrypt_first_round_key(dut):
     cocotb.start_soon(Clock(dut.clk, 10, unit="ns").start())
     await check_aes(dut, r_dec=0b11, key_length=16)
 
 
-@cocotb.test(skip=True)
+@cocotb.test()
 async def test_aes192_decrypt_first_round_key(dut):
     cocotb.start_soon(Clock(dut.clk, 10, unit="ns").start())
     await check_aes(dut, r_dec=0b11, key_length=24)
 
 
-@cocotb.test(skip=True)
+@cocotb.test()
 async def test_aes256_decrypt_first_round_key(dut):
     cocotb.start_soon(Clock(dut.clk, 10, unit="ns").start())
     await check_aes(dut, r_dec=0b11, key_length=32)

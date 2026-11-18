@@ -31,18 +31,19 @@ typedef enum logic [4:0] {
  kLoadData,
  kLoadKey,
  kE128Init,
- kE128Final,
+ kEFinal,
  kD128Init,
  kD128Final,
  kE192Init,
- kE192Final,
+ kD128Key,
  kD192Init,
  kD192Final,
  kE256Init,
- kE256Final,
+ kD192Key,
  kD256Init,
  kD256Final,
  kOutput,
+ kD256Key1,
  kE128Round = 5'd16,
  kD128Round,
  kE192Round1,
@@ -56,7 +57,8 @@ typedef enum logic [4:0] {
  kE256Round3,
  kE256Round4,
  kD256Round1,
- kD256Round2
+ kD256Round2,
+ kD256Key2
 } state_e;
 
 state_e state,state_n;
@@ -87,20 +89,27 @@ endfunction
 function automatic logic processing(input state_e s);
  processing=(s!=kLoadData)&&(s!=kLoadKey)&&(s!=kOutput);
 endfunction
+function automatic logic key_state(input state_e s);
+ key_state=(s==kD128Key)||(s==kD192Key)||
+           (s==kD256Key1)||(s==kD256Key2);
+endfunction
 
-// The number of ControlAdd requests is a state property.  Most states need
-// one request today, but keeping this as a state/count schedule is important:
-// one state can launch ControlAdd more than once with a different setting.
-function automatic logic [5:0] add_requests(input state_e s);
+// The final AES-192 key iteration needs two requests (12 XOR cycles and
+// four key-only cycles); the preceding iterations need three requests.
+function automatic logic [5:0] add_requests(input state_e s,
+                                           input logic [3:0] key_round);
     case (s)
-        kE128Init, kE128Final, kD128Init, kD128Final,
-        kE192Init, kE192Final, kD192Init, kD192Final,
-        kE256Init, kE256Final, kD256Init, kD256Final,
+        kE128Init, kEFinal, kD128Init, kD128Final,
+        kE192Init, kD192Init, kD192Final,
+        kE256Init, kD256Init, kD256Final,
+        kD128Key, kD192Key, kD256Key1, kD256Key2,
         kE128Round, kD128Round, kE192Round1, kE192Round2,
         kE192Round3, kE192Round4, kD192Round1, kD192Round2,
         kD192Round3, kE256Round1, kE256Round3, kE256Round4,
         kD256Round1, kD256Round2: begin
             if (s == kE192Round4) add_requests = 6'd2;
+            else if (s == kD192Key)
+                add_requests = (key_round == 4'd7) ? 6'd2 : 6'd3;
             else if (s == kD192Init) add_requests = 6'd3;
             else if (s == kD256Init) add_requests = 6'd4;
             else if (s == kE256Init) add_requests = 6'd6;
@@ -119,8 +128,11 @@ always_comb begin
         kE128Round, kE192Round2, kE192Round3, kE256Round1,
         kE256Round3, kE256Round4:
             state_done = count == 2 && done_add;
-        kE128Final, kE192Final, kE256Final:
+        kEFinal:
             state_done = count == 2 && done_add;
+        kD128Key, kD256Key1, kD256Key2:
+            state_done = count == 2 && done_add;
+        kD192Key: state_done = count == add_requests(state, round) && done_add;
         kD128Init: state_done = done_keyexpand;
         kD128Round, kD192Round1, kD192Round2, kD192Round3,
         kD256Round1, kD256Round2: state_done = done_shiftrow;
@@ -159,10 +171,21 @@ always_comb begin
             add_i_xor = (count == 0) ? 2'b11 : 2'b10;
         end
 
-        kE128Final, kE192Final, kE256Final: begin
+        kEFinal: begin
             start_add = done_keyexpand || (done_add && count == 1);
             add_i_sbox = 1'b0;
             add_i_xor = 2'b11;
+        end
+
+        kD128Key, kD192Key, kD256Key1, kD256Key2: begin
+            start_add = done_keyexpand ||
+                        (done_add && count < add_requests(state, round));
+            add_i_add = 1'b0;
+            add_i_sbox = 1'b0;
+            // The last request XORs its first four bytes, then rotates the
+            // key for four cycles with c_keyen only.
+            add_i_xor = (count == add_requests(state, round) - 1'b1) ?
+                        2'b10 : 2'b11;
         end
 
         kD128Init: begin
@@ -276,8 +299,8 @@ end
 
 always_comb begin
     case (state)
-        kE128Round, kE128Final, kE192Round2, kE192Round3, kE192Round4,
-        kE192Final, kE256Round1, kE256Round3, kE256Round4, kE256Final:
+        kE128Round, kEFinal, kE192Round2, kE192Round3, kE192Round4,
+        kE256Round1, kE256Round3, kE256Round4:
             start_shiftrow = state_start;
         kD128Init: start_shiftrow = done_add && count == 2;
         kD128Round, kD192Round1, kD192Round2, kD192Round3,
@@ -305,8 +328,10 @@ end
 
 always_comb begin
     case (state)
-        kE128Round, kE128Final, kE192Round3, kE192Final,
-        kE256Round3, kE256Round4, kE256Final:
+        kE128Round, kEFinal, kE192Round3,
+        kE256Round3, kE256Round4:
+            start_keyexpand = state_start;
+        kD128Key, kD192Key, kD256Key1, kD256Key2:
             start_keyexpand = state_start;
         kD128Init: start_keyexpand = done_add && count == 2;
         kD128Round, kD192Round2, kD256Round1, kD256Round2:
@@ -319,14 +344,15 @@ always_comb begin
     endcase
     // The AES-256 LUT uses ke2 only for its second expansion step.  Init,
     // R4, and decryption R1 retain the normal ke0/ke1 sequence.
-    keyexpand_is_ke2 = (state == kE256Round3 || state == kD256Round2);
+    keyexpand_is_ke2 = (state == kE256Round3 || state == kD256Round2 ||
+                        state == kD256Key2);
 end
 
 ControlAdd i_control_add (
     .clk(clk),
     .rst_n(rst_n),
     .start(start_add),
-    .r_dec(r_dec[1]),
+    .r_dec(r_dec[1] && !key_state(state)),
     .i_add(add_i_add),
     .i_sbox(add_i_sbox),
     .i_xor(add_i_xor),
@@ -370,28 +396,38 @@ always_comb begin
  state_n=state;
  case(state)
   kLoadData:if(i_valid&&count==6'd15) state_n=kLoadKey;
-  kLoadKey:if(i_valid&&count==key_cycles(r_level)-1'b1) case({r_dec[1],r_level})
-   3'b000:state_n=kE128Init;
-   3'b001:state_n=kE192Init;
-   3'b010,3'b011:state_n=kE256Init;
-   3'b100:state_n=kD128Init;
-   3'b101:state_n=kD192Init;
-   3'b110,3'b111: state_n=kD256Init;
-  endcase
+  kLoadKey:if(i_valid&&count==key_cycles(r_level)-1'b1) begin
+   if (!r_dec[1]) case (r_level)
+    2'b00:state_n=kE128Init;
+    2'b01:state_n=kE192Init;
+    default:state_n=kE256Init;
+   endcase
+   else if (r_dec[0]) case (r_level)
+    2'b00:state_n=kD128Key;
+    2'b01:state_n=kD192Key;
+    default:state_n=kD256Key1;
+   endcase
+   else case (r_level)
+    2'b00:state_n=kD128Init;
+    2'b01:state_n=kD192Init;
+    default:state_n=kD256Init;
+   endcase
+  end
   kE128Init:if(state_done)state_n=kE128Round;
-  kE128Round:if(state_done&&round==8)state_n=kE128Final;
-  kE128Final:if(state_done)state_n=kOutput;
+  kE128Round:if(state_done&&round==8)state_n=kEFinal;
+  kEFinal:if(state_done)state_n=kOutput;
+  kD128Key:if(state_done&&round==9)state_n=kD128Init;
   kD128Init:if(state_done)state_n=kD128Round;
   kD128Round:if(state_done&&round==8)state_n=kD128Final;
   kD128Final:if(state_done)state_n=kOutput;
   kE192Init:if(state_done)state_n=kE192Round1;
   kE192Round1:if(state_done)state_n=kE192Round2;
   kE192Round2:if(state_done) begin
-   if(round==10)state_n=kE192Final; else state_n=kE192Round3;
+   if(round==10)state_n=kEFinal; else state_n=kE192Round3;
   end
   kE192Round3:if(state_done)state_n=kE192Round4;
   kE192Round4:if(state_done)state_n=kE192Round2;
-  kE192Final:if(state_done)state_n=kOutput;
+  kD192Key:if(state_done&&round==7)state_n=kD192Init;
   kD192Init:if(state_done)state_n=kD192Round1;
   kD192Round1:if(state_done)state_n=kD192Round2;
   kD192Round2:if(state_done) begin
@@ -402,10 +438,13 @@ always_comb begin
   kE256Init:if(state_done)state_n=kE256Round1;
   kE256Round1:if(state_done&&round==1)state_n=kE256Round3;
   kE256Round3:if(state_done) begin
-   if(round==12)state_n=kE256Final; else state_n=kE256Round4;
+   if(round==12)state_n=kEFinal; else state_n=kE256Round4;
   end
   kE256Round4:if(state_done)state_n=kE256Round3;
-  kE256Final:if(state_done)state_n=kOutput;
+  kD256Key1:if(state_done) begin
+   if(round==12)state_n=kD256Init; else state_n=kD256Key2;
+  end
+  kD256Key2:if(state_done)state_n=kD256Key1;
   kD256Init:if(state_done)state_n=kD256Round1;
   kD256Round1:if(state_done) begin
    if(round==12)state_n=kD256Final; else state_n=kD256Round2;
@@ -438,7 +477,10 @@ always_ff @(posedge clk or negedge rst_n) begin
      // A round state may deliberately transition back to itself.  Its round
      // counter therefore advances on schedule completion, not only when the
      // encoded state value changes.
-     if(state[4])round<=round+1'b1;
+     if(key_state(state)) begin
+       if(!key_state(state_n)) round<='0;
+       else round<=round+1'b1;
+     end else if(state[4]) round<=round+1'b1;
    end
   end else if(state_n!=state) begin
    state<=state_n;
@@ -455,6 +497,7 @@ assign c_stateen = (state == kLoadData) ? i_valid :
 assign c_loadkey = (state == kLoadKey) && i_valid;
 assign c_keyen = (state == kLoadKey) ? i_valid : add_keyen;
 assign c_ikxor = add_ikxor;
+assign c_resetrc = state_done && key_state(state) && !key_state(state_n);
 assign c_dec192_keysel = (state == kD192Round1 && add_keyen) ? 2'b01 :
                          (state == kD192Round2 && add_keyen) ? 2'b10 : 2'b00;
 assign i_ready=(state==kLoadData)||(state==kLoadKey);
