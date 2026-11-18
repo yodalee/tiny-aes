@@ -7,7 +7,7 @@ module AesCore (
     input clk,
     input rst_n,
     // CSR
-    input        r_dec,
+    input [1:0]  r_dec,
     input [1:0]  r_level,
     // Control signal from the controlfsm
     /// control of aes state
@@ -21,6 +21,7 @@ module AesCore (
     input        c_ke1,
     input        c_ke2,
     input        c_kxor,
+    input        c_resetrc,
     // Per-bypass enable mask: [5:0] = {key74, key64, key34, key24, key14, key04}.
     input [4:0]  c_ikxor,
     input [1:0]  c_dec192_keysel,
@@ -75,6 +76,7 @@ KeyExpansion i_key_expansion (
     .c_ke1(c_ke1),
     .c_ke2(c_ke2),
     .c_kxor(c_kxor),
+    .c_resetrc(c_resetrc),
     .c_ikxor(c_ikxor),
     .c_dec192_keysel(c_dec192_keysel),
     .i_key(i_roundkey),
@@ -89,7 +91,7 @@ KeyExpansion i_key_expansion (
 byte i_sboxkey;
 assign i_sboxkey = c_ke2 ? key70 : key71;
 AddRoundKey i_add_round_key (
-    .r_dec(r_dec),
+    .r_dec(r_dec[1]),
     .c_add(c_add),
     .c_sbox(c_sbox),
     .c_keyexpansion(c_keyexpansion),

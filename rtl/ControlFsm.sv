@@ -19,6 +19,7 @@ module ControlFsm (
     output logic       c_ke1,
     output logic       c_ke2,
     output logic       c_kxor,
+    output logic       c_resetrc,
     output logic [4:0] c_ikxor,
     output logic [1:0] c_dec192_keysel,
     output logic       c_add,

@@ -28,7 +28,7 @@ module KeyExpansion (
     input       clk,
     input       rst_n,
     // register signal,
-    input       r_dec,
+    input [1:0] r_dec,
     input [1:0] r_level,
     // control signal, prefix with c_, should be one-hot
     input       c_en,
@@ -40,6 +40,7 @@ module KeyExpansion (
     input       c_ke1,
     input       c_ke2,
     input       c_kxor,
+    input       c_resetrc,
     // Per-bypass enable mask: [4:0] = {key14, key24, key34, key64, key74}
     input [4:0] c_ikxor,
     input [1:0] c_dec192_keysel,
@@ -67,10 +68,16 @@ assign is192 = r_level == kLevel192;
 
 always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) c_rc_idx <= '0;
-    else if (c_loadkey) begin
+    else if (c_resetrc) begin
+        case (r_level)
+            kLevel128: c_rc_idx <= 5'd22;
+            kLevel192: c_rc_idx <= 5'd24;
+            default:   c_rc_idx <= 5'd25;
+        endcase
+    end else if (c_loadkey) begin
         // Select the reverse RcLUT window.  Its starts encode Rcon 9, 7,
         // and 6 for AES-128, AES-192, and AES-256 respectively.
-        if (r_dec) begin
+        if (r_dec == 2'b10) begin
             case (r_level)
                 kLevel128: c_rc_idx <= 5'd22;
                 kLevel192: c_rc_idx <= 5'd24;
