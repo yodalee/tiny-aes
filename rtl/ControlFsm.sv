@@ -61,7 +61,6 @@ state_e state,state_n;
 // ControlAdd requests launched in a processing state.
 logic [5:0] count;
 logic [3:0] round;
-logic [3:0] phase;
 logic state_start;
 logic start_add,done_add;
 logic start_shiftrow,done_shiftrow;
@@ -413,7 +412,7 @@ always_comb begin
 end
 
 always_ff @(posedge clk or negedge rst_n) begin
- if(!rst_n) begin state<=kLoadData; count<='0; round<='0; phase<=0; state_start<=0; end
+ if(!rst_n) begin state<=kLoadData; count<='0; round<='0; state_start<=0; end
  else if((state==kLoadData||state==kLoadKey)&&!i_valid) begin end
  else if(state==kOutput&&!o_ready) begin end
  else begin
@@ -427,7 +426,6 @@ always_ff @(posedge clk or negedge rst_n) begin
   if(processing(state) && start_add) count<=count+1'b1;
   if(processing(state)) begin
    if(state_done) begin
-     phase<=0;
      count<='0;
      state<=state_n;
      if(processing(state_n)) state_start<=1;
@@ -437,7 +435,7 @@ always_ff @(posedge clk or negedge rst_n) begin
      if(state[4])round<=round+1'b1;
    end
   end else if(state_n!=state) begin
-   state<=state_n; phase<=0;
+   state<=state_n;
    if(processing(state_n)) state_start<=1;
    if(state==kLoadKey)round<=0;
   end

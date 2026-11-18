@@ -8,7 +8,7 @@ module SboxArish (
 );
 
 localparam logic [1:0] ETA = 2'b01;
-localparam logic [3:0] NU = 4'b0010;
+// localparam logic [3:0] NU = 4'b0010;
 
 function automatic logic [15:0] rebase_in(input logic [7:0] n);
 begin
@@ -126,7 +126,6 @@ end
 endfunction
 
 function automatic logic [3:0] g17(input logic [3:0] a, input logic [3:0] b);
-    logic [3:0] c, d, sqr;
     logic a32, b32, a31, b31, a10, b10, a20, b20, ap, bp;
 begin
     a32 = a[3] ^ a[2];
