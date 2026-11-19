@@ -6,10 +6,11 @@ ControlFsm
 The state machines is listed below, for each operation, it should go through:
 1. loaddata
 2. loadkey
-3. init
-4. some round states which may repeat and bounce back in state
-5. final
-6. output
+3. for decryption from a first-round key, expand the key to the last-round key
+4. init
+5. some round states which may repeat and bounce back in state
+6. final
+7. output
 
 There will be following states:
 
@@ -17,9 +18,13 @@ There will be following states:
 |-----------:|-------:|------------------------------------------:|
 | loaddata   |        | receive 16 cycle of input handshake       |
 | loadkey    |        | receive 16/24/32 cycle of input handshake |
+| d128key    |        | 10 key expansions, each followed by 12 key XOR cycles |
+| d192key    |        | 7 iterations of 20 XOR + 4 key-only cycles; final iteration of 12 XOR + 4 key-only cycles |
+| d256key1  |        | 7 ke0/ke1 expansions, each followed by 12 key XOR cycles |
+| d256key2  |        | 6 ke2 expansions, each followed by 12 key XOR cycles |
 | e128init   | 16     |                                           |
 | e128round  | 23     | repeat 10 times                           |
-| e128final  | 20     |                                           |
+| efinal     | 20     | shared by AES-128, AES-192, and AES-256    |
 | d128init   | 20     |                                           |
 | d128round  | 31     | repeat 10 times                           |
 | d128final  | 16     |                                           |
@@ -28,7 +33,6 @@ There will be following states:
 | e192round2 | 23     | round 2, 5, 8, 11                         |
 | e192round3 | 23     | round 3, 6, 9                             |
 | e192round4 | 27     | round 4, 7, 10                            |
-| e192final  | 20     |                                           |
 | d192init   | 27     |                                           |
 | d192round1 | 35     | round 1, 4, 7, 10                         |
 | d192round2 | 31     | round 2, 5, 8, 11                         |
@@ -38,7 +42,6 @@ There will be following states:
 | e256round1 | 23     | round 1, 2                                |
 | e256round3 | 23     | round 3, 5, 7, 9, 11, 13                  |
 | e256round4 | 23     | round 4, 6, 8, 10, 12                     |
-| e256final  | 20     |                                           |
 | d256init   | 35     |                                           |
 | d256round1 | 31     | round 1, 3, 5, 7, 9, 11                   |
 | d256round2 | 31     | round 2, 4, 6, 8, 10, 12                  |
