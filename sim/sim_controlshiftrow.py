@@ -10,7 +10,6 @@ async def reset(dut):
     await RisingEdge(dut.clk)
     await ReadOnly()
     assert controls(dut) == 0
-    assert dut.done.value == 0
     await Timer(1, unit="ns")
     dut.rst_n.value = 1
 
@@ -22,10 +21,14 @@ def controls(dut):
 async def trigger(dut, r_dec):
     dut.r_dec.value = r_dec
     dut.start.value = 1
+    await Timer(1, unit="ns")
+    first_cycle = controls(dut)
     await RisingEdge(dut.clk)
     await ReadOnly()
+    second_cycle = controls(dut)
     await Timer(1, unit="ns")
     dut.start.value = 0
+    return first_cycle, second_cycle
 
 
 async def observe_controls(dut, cycles):
@@ -33,9 +36,7 @@ async def observe_controls(dut, cycles):
     for _ in range(cycles):
         await RisingEdge(dut.clk)
         await ReadOnly()
-        observed.append(
-            (controls(dut), int(dut.done.value))
-        )
+        observed.append(controls(dut))
     return observed
 
 
@@ -44,13 +45,9 @@ async def test_encrypt_generates_shiftrow_sequence(dut):
     cocotb.start_soon(Clock(dut.clk, 10, unit="ns").start())
     await reset(dut)
 
-    await trigger(dut, r_dec=0)
-    assert (controls(dut), int(dut.done.value)) == (7, 0)
-    assert await observe_controls(dut, 3) == [
-        (6, 0),
-        (4, 1),
-        (0, 0),
-    ]
+    first, second = await trigger(dut, r_dec=0)
+    assert first == 7
+    assert [first, second] + await observe_controls(dut, 2) == [7, 6, 4, 0]
 
 
 @cocotb.test()
@@ -58,13 +55,9 @@ async def test_decrypt_generates_inverse_shiftrow_sequence(dut):
     cocotb.start_soon(Clock(dut.clk, 10, unit="ns").start())
     await reset(dut)
 
-    await trigger(dut, r_dec=1)
-    assert (controls(dut), int(dut.done.value)) == (7, 0)
-    assert await observe_controls(dut, 3) == [
-        (3, 0),
-        (1, 1),
-        (0, 0),
-    ]
+    first, second = await trigger(dut, r_dec=1)
+    assert first == 7
+    assert [first, second] + await observe_controls(dut, 2) == [7, 3, 1, 0]
 
 
 @cocotb.test()
@@ -72,15 +65,14 @@ async def test_start_is_ignored_while_active(dut):
     cocotb.start_soon(Clock(dut.clk, 10, unit="ns").start())
     await reset(dut)
 
-    await trigger(dut, r_dec=0)
+    first, second = await trigger(dut, r_dec=0)
+    assert (first, second) == (7, 6)
     dut.start.value = 1
+    await Timer(1, unit="ns")
+    assert controls(dut) == 6
     await RisingEdge(dut.clk)
     await ReadOnly()
-    assert (controls(dut), int(dut.done.value)) == (6, 0)
+    assert controls(dut) == 4
     await Timer(1, unit="ns")
     dut.start.value = 0
-    assert await observe_controls(dut, 3) == [
-        (4, 1),
-        (0, 0),
-        (0, 0),
-    ]
+    assert await observe_controls(dut, 2) == [0, 0]

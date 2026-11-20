@@ -11,7 +11,6 @@ def controls(dut):
         int(dut.c_sbox.value),
         int(dut.c_kxor.value),
         int(dut.c_ikxor.value),
-        int(dut.done.value),
     )
 
 
@@ -25,7 +24,7 @@ async def reset(dut):
     dut.i_ikxor.value = 0
     await RisingEdge(dut.clk)
     await ReadOnly()
-    assert controls(dut) == (0, 0, 0, 0, 0, 0, 0)
+    assert controls(dut) == (0, 0, 0, 0, 0, 0)
     await Timer(1, unit="ns")
     dut.rst_n.value = 1
 
@@ -37,10 +36,14 @@ async def trigger(dut, *, r_dec, i_add, i_sbox, i_xor, i_ikxor=0):
     dut.i_xor.value = i_xor
     dut.i_ikxor.value = i_ikxor
     dut.start.value = 1
+    await Timer(1, unit="ns")
+    first_cycle = controls(dut)
     await RisingEdge(dut.clk)
     await ReadOnly()
+    second_cycle = controls(dut)
     await Timer(1, unit="ns")
     dut.start.value = 0
+    return first_cycle, second_cycle
 
 
 async def observe(dut, cycles):
@@ -57,17 +60,13 @@ async def test_encrypt_sbox_and_full_kxor(dut):
     cocotb.start_soon(Clock(dut.clk, 10, unit="ns").start())
     await reset(dut)
 
-    await trigger(dut, r_dec=0, i_add=1, i_sbox=1, i_xor=0b11)
-    assert controls(dut) == (1, 1, 1, 1, 1, 0, 0)
-    assert await observe(dut, 8) == [
-        (1, 1, 1, 1, 1, 0, 0),
-        (1, 1, 1, 1, 1, 0, 0),
-        (1, 1, 1, 1, 1, 0, 0),
-        (1, 1, 1, 1, 1, 0, 0),
-        (1, 1, 1, 1, 1, 0, 0),
-        (1, 1, 1, 1, 1, 0, 0),
-        (1, 1, 1, 1, 1, 0, 1),
-        (0, 0, 0, 0, 0, 0, 0),
+    first, second = await trigger(
+        dut, r_dec=0, i_add=1, i_sbox=1, i_xor=0b11
+    )
+    active = (1, 1, 1, 1, 1, 0)
+    assert first == active
+    assert [first, second] + await observe(dut, 7) == [active] * 8 + [
+        (0, 0, 0, 0, 0, 0)
     ]
 
 
@@ -76,40 +75,24 @@ async def test_xor_window_and_decrypt_ikxor(dut):
     cocotb.start_soon(Clock(dut.clk, 10, unit="ns").start())
     await reset(dut)
 
-    await trigger(dut, r_dec=0, i_add=1, i_sbox=0, i_xor=0b10)
-    assert [value[4] for value in [controls(dut)] + await observe(dut, 7)] == [
-        1,
-        1,
-        1,
-        1,
-        0,
-        0,
-        0,
-        0,
-    ]
+    first, second = await trigger(
+        dut, r_dec=0, i_add=1, i_sbox=0, i_xor=0b10
+    )
+    values = [first, second] + await observe(dut, 7)
+    assert [value[4] for value in values[:8]] == [1, 1, 1, 1, 0, 0, 0, 0]
+    assert values[8] == (0, 0, 0, 0, 0, 0)
 
-    await RisingEdge(dut.clk)
     await Timer(1, unit="ns")
     ikxor_mask = 0b10101
-    await trigger(
-        dut,
-        r_dec=1,
-        i_add=1,
-        i_sbox=0,
-        i_xor=0b01,
-        i_ikxor=ikxor_mask,
+    first, second = await trigger(
+        dut, r_dec=1, i_add=1, i_sbox=0, i_xor=0b01, i_ikxor=ikxor_mask
     )
-    assert [value[5] for value in [controls(dut)] + await observe(dut, 7)] == [
-        0,
-        0,
-        0,
-        0,
-        ikxor_mask,
-        ikxor_mask,
-        ikxor_mask,
-        ikxor_mask,
-    ]
-    assert all(value[4] == 0 for value in [controls(dut)])
+    values = [first, second] + await observe(dut, 7)
+    assert [value[5] for value in values[:8]] == [0, 0, 0, 0] + [
+        ikxor_mask
+    ] * 4
+    assert all(value[4] == 0 for value in values)
+    assert values[8] == (0, 0, 0, 0, 0, 0)
 
 
 @cocotb.test()
@@ -117,38 +100,16 @@ async def test_key_only_rotation_and_sbox_only_control(dut):
     cocotb.start_soon(Clock(dut.clk, 10, unit="ns").start())
     await reset(dut)
 
-    await trigger(dut, r_dec=0, i_add=0, i_sbox=0, i_xor=0)
-    assert controls(dut) == (0, 0, 1, 0, 0, 0, 0)
-    assert all(value[:6] == (0, 0, 1, 0, 0, 0)
-               for value in await observe(dut, 7))
+    first, second = await trigger(
+        dut, r_dec=0, i_add=0, i_sbox=0, i_xor=0
+    )
+    values = [first, second] + await observe(dut, 7)
+    assert values[:8] == [(0, 0, 1, 0, 0, 0)] * 8
+    assert values[8] == (0, 0, 0, 0, 0, 0)
 
-    await RisingEdge(dut.clk)
     await Timer(1, unit="ns")
-    await trigger(dut, r_dec=0, i_add=0, i_sbox=1, i_xor=0)
-    assert controls(dut) == (0, 1, 1, 1, 0, 0, 0)
-
-
-@cocotb.test()
-async def test_terminal_done_accepts_next_request_without_a_bubble(dut):
-    cocotb.start_soon(Clock(dut.clk, 10, unit="ns").start())
-    await reset(dut)
-
-    await trigger(dut, r_dec=0, i_add=0, i_sbox=0, i_xor=0)
-    assert controls(dut) == (0, 0, 1, 0, 0, 0, 0)
-
-    # Advance to the terminal output cycle, where done is asserted.
-    await observe(dut, 7)
-    assert controls(dut) == (0, 0, 1, 0, 0, 0, 1)
-    await Timer(1, unit="ns")
-
-    # A request accepted with done replaces the completed operation directly.
-    dut.r_dec.value = 0
-    dut.i_add.value = 1
-    dut.i_sbox.value = 1
-    dut.i_xor.value = 0b11
-    dut.start.value = 1
-    await RisingEdge(dut.clk)
-    await ReadOnly()
-    assert controls(dut) == (1, 1, 1, 1, 1, 0, 0)
-    await Timer(1, unit="ns")
-    dut.start.value = 0
+    first, second = await trigger(
+        dut, r_dec=0, i_add=0, i_sbox=1, i_xor=0
+    )
+    assert first == (0, 1, 1, 1, 0, 0)
+    assert second == (0, 1, 1, 1, 0, 0)
