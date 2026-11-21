@@ -12,7 +12,6 @@ module ControlAdd (
     input  logic       i_sbox,
     input  logic [1:0] i_xor,
     input  logic [4:0] i_ikxor,
-    output logic       done,
     output logic       c_keyen,
     output logic       c_add,
     output logic       c_stateen,
@@ -27,6 +26,7 @@ logic [1:0] xor_q;
 logic [4:0] ikxor_q;
 logic       busy;
 logic [2:0] cycle;
+logic       direct_start;
 
 function automatic logic xor_enabled(
     input logic [1:0] xor_select,
@@ -40,11 +40,32 @@ function automatic logic xor_enabled(
     endcase
 endfunction
 
+assign direct_start = rst_n && start && !busy;
+
+always_comb begin
+    c_add   = 1'b0;
+    c_sbox  = 1'b0;
+    c_kxor  = 1'b0;
+    c_ikxor = 5'b00000;
+
+    if (direct_start) begin
+        c_add   = i_add;
+        c_sbox  = i_sbox;
+        c_kxor  = !r_dec && xor_enabled(i_xor, 3'd0);
+        c_ikxor = (r_dec && xor_enabled(i_xor, 3'd0)) ? i_ikxor : 5'b00000;
+    end else if (busy) begin
+        c_add   = add_q;
+        c_sbox  = sbox_q;
+        c_kxor  = !r_dec && xor_enabled(xor_q, cycle);
+        c_ikxor = (r_dec && xor_enabled(xor_q, cycle)) ? ikxor_q : 5'b00000;
+    end
+end
+
 // Every invocation advances the key stream.  State advances for either data
 // operation, so an i_add=0/i_sbox=0/i_xor=0 request is an eight-byte key-only
 // rotation.
 assign c_stateen = c_add | c_sbox;
-assign c_keyen   = busy;
+assign c_keyen   = busy | direct_start;
 
 always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
@@ -54,50 +75,19 @@ always_ff @(posedge clk or negedge rst_n) begin
         ikxor_q <= 5'b00000;
         cycle   <= 3'd0;
         busy    <= 1'b0;
-        done    <= 1'b0;
-        c_add   <= 1'b0;
-        c_sbox  <= 1'b0;
-        c_kxor  <= 1'b0;
-        c_ikxor <= 5'b00000;
-    end else if (start && (!busy || done)) begin
+    end else if (direct_start) begin
         add_q   <= i_add;
         sbox_q  <= i_sbox;
         xor_q   <= i_xor;
         ikxor_q <= i_ikxor;
-        cycle   <= 3'd0;
+        cycle   <= 3'd1;
         busy    <= 1'b1;
-        done    <= 1'b0;
-        c_add   <= i_add;
-        c_sbox  <= i_sbox;
-        c_kxor  <= !r_dec && xor_enabled(i_xor, 3'd0);
-        c_ikxor <= (r_dec && xor_enabled(i_xor, 3'd0)) ? i_ikxor : 5'b00000;
     end else if (busy && (cycle == 3'd7)) begin
         cycle   <= 3'd0;
         busy    <= 1'b0;
-        done    <= 1'b0;
-        c_add   <= 1'b0;
-        c_sbox  <= 1'b0;
-        c_kxor  <= 1'b0;
-        c_ikxor <= 5'b00000;
     end else if (busy) begin
-        c_add   <= add_q;
-        c_sbox  <= sbox_q;
-        c_kxor  <= !r_dec && xor_enabled(xor_q, cycle + 3'd1);
-        c_ikxor <= (r_dec && xor_enabled(xor_q, cycle + 3'd1)) ? ikxor_q : 5'b00000;
-        done    <= (cycle == 3'd6);
-
-        if (cycle == 3'd6) begin
-            cycle <= 3'd7;
-        end else begin
-            cycle <= cycle + 3'd1;
-        end
-    end else begin
-        done    <= 1'b0;
-        c_add   <= 1'b0;
-        c_sbox  <= 1'b0;
-        c_kxor  <= 1'b0;
-        c_ikxor <= 5'b00000;
-    end
+        cycle <= cycle + 3'd1;
+    end else cycle <= 3'd0;
 end
 
 endmodule
