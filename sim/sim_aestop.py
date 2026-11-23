@@ -51,7 +51,7 @@ async def reset(dut):
     await RisingEdge(dut.clk)
 
 
-async def run_aes(dut, r_dec, input_bytes, key_bytes):
+async def run_aes(dut, r_dec, input_bytes, key_bytes, reset_before=True):
     """Run one transaction with periodic valid/ready software strobes.
 
     After every rising edge, this coroutine waits for the writable simulation
@@ -62,7 +62,12 @@ async def run_aes(dut, r_dec, input_bytes, key_bytes):
     """
     dut.r_dec.value = r_dec
     dut.r_level.value = KEY_LEVEL[len(key_bytes)]
-    await reset(dut)
+    if reset_before:
+        await reset(dut)
+    else:
+        # The preceding transaction returns in ReadWrite; advance before
+        # entering that phase again, keeping reset inactive (rst_n high).
+        await RisingEdge(dut.clk)
 
     input_stream = input_bytes + key_bytes
     input_index = 0
@@ -116,7 +121,7 @@ async def run_aes(dut, r_dec, input_bytes, key_bytes):
     )
 
 
-async def check_aes(dut, r_dec, key_length):
+async def check_aes(dut, r_dec, key_length, reset_before=True):
     decrypt = bool(r_dec & 0b10)
     if decrypt:
         input_bytes = EXPECTED[key_length]
@@ -130,7 +135,9 @@ async def check_aes(dut, r_dec, key_length):
         input_bytes = DATA
         key_bytes = bytes(range(key_length))
         expected = EXPECTED[key_length]
-    actual = await run_aes(dut, r_dec, input_bytes, key_bytes)
+    actual = await run_aes(
+        dut, r_dec, input_bytes, key_bytes, reset_before=reset_before
+    )
     direction = "decrypt" if decrypt else "encrypt"
     assert actual == expected, (
         f"AES-{key_length * 8} {direction} returned {actual.hex()}, "
@@ -196,3 +203,14 @@ async def test_aes192_decrypt_first_round_key(dut):
 async def test_aes256_decrypt_first_round_key(dut):
     cocotb.start_soon(Clock(dut.clk, 10, unit="ns").start())
     await check_aes(dut, r_dec=0b11, key_length=32)
+
+
+@cocotb.test()
+@cocotb.parametrize(key_length=[16, 24, 32], r_dec=[0b00, 0b01, 0b10, 0b11])
+async def test_aes_consecutive_transactions(dut, key_length, r_dec):
+    """Run two transactions with rst_n held high between them."""
+    cocotb.start_soon(Clock(dut.clk, 10, unit="ns").start())
+    await check_aes(dut, r_dec, key_length)
+    assert as_int(dut.rst_n.value) == 1
+    await check_aes(dut, r_dec, key_length, reset_before=False)
+    assert as_int(dut.rst_n.value) == 1
