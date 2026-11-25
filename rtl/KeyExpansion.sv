@@ -191,8 +191,8 @@ assign key24 = (c_ikxor[3] ? key20 : 8'd0) ^ key30;
 assign key34 = (c_ikxor[2] ? key30 : 8'd0) ^ (is192 ? key60 : key40);
 assign key64 = (c_ikxor[1] ? key60 : 8'd0) ^ key70;
 byte key74_a, key74_b;
-assign key74_a = c_ikxor[0] ? key70 : 8'd0;
-assign key74_b = mux_input[1] ? key00 : (mux_input[0] ? key70 : i_key);
+assign key74_a = (c_ikxor[0] || mux_input[0]) ? key70 : 8'd0;
+assign key74_b = mux_input[1] ? key00 : (mux_input[0] ? 8'd0 : i_key);
 assign key74 = key74_a ^ key74_b;
 
 
